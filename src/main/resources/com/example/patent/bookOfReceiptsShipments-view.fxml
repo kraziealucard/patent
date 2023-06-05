@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<GridPane prefHeight="586.0" prefWidth="846.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="SampleController">
+
+    <TableView fx:id="table" prefHeight="487.0" prefWidth="745.0" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
+        <columns>
+            <TableColumn text="Код" />
+            <TableColumn text="Дата" />
+            <TableColumn text="Контрагент" />
+            <TableColumn text="Код ячейки" />
+            <TableColumn prefWidth="130.39998779296877" text="Провел операцию" />
+        </columns>
+      <columnResizePolicy>
+         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+      </columnResizePolicy>
+    </TableView>
+
+    <HBox GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+      <children>
+         <VBox alignment="BOTTOM_LEFT" HBox.hgrow="ALWAYS">
+            <children>
+               <RadioButton mnemonicParsing="false" text="Книга поступлений">
+                  <VBox.margin>
+                     <Insets bottom="5.0" left="5.0" top="5.0" />
+                  </VBox.margin></RadioButton>
+               <RadioButton mnemonicParsing="false" text="Книга отгрузок">
+                  <VBox.margin>
+                     <Insets bottom="5.0" left="5.0" top="5.0" />
+                  </VBox.margin></RadioButton>
+            </children>
+         </VBox>
+         <VBox alignment="BOTTOM_LEFT" HBox.hgrow="ALWAYS">
+            <children>
+               <CheckBox mnemonicParsing="false" text="с:">
+                  <VBox.margin>
+                     <Insets bottom="5.0" top="5.0" />
+                  </VBox.margin></CheckBox>
+               <CheckBox mnemonicParsing="false" text="по:">
+                  <VBox.margin>
+                     <Insets bottom="5.0" top="5.0" />
+                  </VBox.margin></CheckBox>
+            </children>
+         </VBox>
+         <VBox alignment="BOTTOM_LEFT" HBox.hgrow="ALWAYS">
+            <children>
+               <DatePicker>
+                  <VBox.margin>
+                     <Insets top="2.0" />
+                  </VBox.margin></DatePicker>
+               <DatePicker>
+                  <VBox.margin>
+                     <Insets bottom="5.0" />
+                  </VBox.margin></DatePicker>
+            </children>
+         </VBox>
+         <VBox alignment="BOTTOM_LEFT" HBox.hgrow="ALWAYS">
+            <children>
+               <CheckBox mnemonicParsing="false" text="контрагент:">
+                  <VBox.margin>
+                     <Insets bottom="5.0" />
+                  </VBox.margin></CheckBox>
+               <CheckBox mnemonicParsing="false" text="провел операцию:">
+                  <VBox.margin>
+                     <Insets bottom="5.0" top="5.0" />
+                  </VBox.margin></CheckBox>
+            </children>
+         </VBox>
+         <VBox alignment="BOTTOM_LEFT" HBox.hgrow="ALWAYS">
+            <children>
+               <ComboBox prefWidth="150.0">
+                  <VBox.margin>
+                     <Insets top="2.0" />
+                  </VBox.margin></ComboBox>
+               <ComboBox prefWidth="150.0">
+                  <VBox.margin>
+                     <Insets bottom="5.0" />
+                  </VBox.margin></ComboBox>
+            </children>
+         </VBox>
+         <VBox alignment="BOTTOM_RIGHT" HBox.hgrow="ALWAYS">
+            <children>
+               <Button mnemonicParsing="false" text="Печать">
+                  <VBox.margin>
+                     <Insets bottom="5.0" right="5.0" />
+                  </VBox.margin></Button>
+               <Button mnemonicParsing="false" text="Открыть расход">
+                  <VBox.margin>
+                     <Insets bottom="5.0" right="5.0" />
+                  </VBox.margin></Button>
+            </children>
+         </VBox>
+      </children>
+    </HBox>
+   <columnConstraints>
+      <ColumnConstraints />
+      <ColumnConstraints hgrow="ALWAYS" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints vgrow="ALWAYS" />
+      <RowConstraints vgrow="ALWAYS" />
+   </rowConstraints>
+
+</GridPane>

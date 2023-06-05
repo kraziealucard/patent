@@ -1,0 +1,595 @@
+@startuml
+
+title Class Diagram \n
+
+class createStorageItemController {
+nameField : TextField
+weightField : TextField
+btn : Button
+SupplierCbBox : ComboBox
+groupCbBox : ComboBox
+typeOfStorageItems : ArrayList
+suppliers : ArrayList
+isProduct : boolean
+createStorageItemController() : construct
+init() : void
+loadGroup() : void
+loadSupplier() : void
+btnClick() : void
+}
+
+class ContractorController {
+table : TableView
+columnName : TableColumn
+columnIsSupplier : TableColumn
+columnAddress : TableColumn
+columnInformation : TableColumn
+columnPassport : TableColumn
+columnPhone : TableColumn
+columnBankRequisites : TableColumn
+columnIIN : TableColumn
+columnKPP : TableColumn
+btnAdd : Button
+btnRemove : Button
+TFName : TextField
+CBisSupplier : CheckBox
+TFaddress : TextField
+TAInfo : TextArea
+TFpassport : TextField
+TFphone : TextField
+TFbankRequisites : TextField
+TFinn : TextField
+TFkpp : TextField
+CheckBoxSelection : CheckBox
+comboBoxContactorType : ComboBox
+boxForFields : VBox
+data : ObservableList
+customersBefore : ArrayList
+suppliersBefore : ArrayList
+ContractorController() : construct
+init() : void
+configureUI() : void
+filteredCustomers() : void
+filteredSuppliers() : void
+configureClmn() : void
+configureFields() : void
+configureTable() : void
+disableUIElements() : void
+displaySelectedContractor() : void
+addContractor() : void
+removeContractor() : void
+setTypeContractor() : void
+updateTable() : void
+acceptChanges() : void
+cancelChanges() : void
+toFirst() : void
+toLast() : void
+TFNameAction() : void
+TFaddressAction() : void
+TFpassportAction() : void
+TFphoneAction() : void
+TFbankRequisitesAction() : void
+TFinnAction() : void
+TFkppAction() : void
+}
+
+class ZoneViewController {
+idClmn : TableColumn
+nameClmn : TableColumn
+forProductClmn : TableColumn
+numberOfCells : TableColumn
+maxWeightClmn : TableColumn
+table : TableView
+deleteBtn : Button
+contextMenu : ContextMenu
+zones : ArrayList
+items : ObservableList
+tabPane : TabPane
+ZoneViewController() : construct
+init() : void
+configureUI() : void
+updateItems() : void
+configureTable() : void
+configureClmn() : void
+addZone() : void
+deleteZones() : void
+toFirst() : void
+toLast() : void
+toCell() : void
+}
+
+class PositionViewController {
+positionListView : ListView
+positionNameField : TextField
+CBEditUserAndRolePermissions : CheckBox
+CBWarehouseEditPermissions : CheckBox
+CBAddProductPermissions : CheckBox
+CBEditProductPermissions : CheckBox
+CBDeleteProductPermissions : CheckBox
+CBViewReportPermissions : CheckBox
+CBViewProductInfoPermissions : CheckBox
+btnRemovePosition : Button
+positions : ArrayList
+PositionViewController() : construct
+init() : void
+configureUI() : void
+configureListView() : void
+disableUIElements() : void
+enableUIElements() : void
+displayPermissionsForPosition() : void
+setEditUserAndRolePermissions() : void
+setWarehouseEditPermissions() : void
+setAddProductPermissions() : void
+setEditProductPermissions() : void
+setDeleteProductPermissions() : void
+setViewReportPermissions() : void
+setViewProductInfoPermissions() : void
+acceptChanges() : void
+isHasDuplicatePositionNameError() : boolean
+cancelChanges() : void
+removePosition() : void
+addPosition() : void
+showDuplicateNameErrorDialog() : void
+showInvalidNameErrorDialog() : void
+saveNewNameForPosition() : void
+TFAction() : void
+}
+
+class createUserController {
+nameTextField : TextField
+positionComboBox : ComboBox
+loginTextField : TextField
+passwordTextField : TextField
+saveButton : Button
+labelNameWindow : Label
+root : GridPane
+users : ArrayList
+usersViewController : UsersViewController
+createUserController() : construct
+init() : void
+areAllTextFieldsFilled() : boolean
+addNewUser() : void
+}
+
+class productOnStorageController {
+table : TableView
+idClmn : TableColumn
+nameCLmn : TableColumn
+groupClmn : TableColumn
+weightClmn : TableColumn
+supplierClmn : TableColumn
+zoneClmn : TableColumn
+cellClmn : TableColumn
+amountClmn : TableColumn
+capacityClmn : TableColumn
+freelyClmn : TableColumn
+productOnStorageController() : construct
+}
+
+class stockReplenishmentController {
+stockReplenishmentController() : construct
+init() : void
+}
+
+class Cell {
+ID : Long
+currentWeight : double
+name : String
+stored : ArrayList
+isActive : boolean
+maxWeight : double
+zone : WarehouseZone
+Cell() : construct
+addProducts() : boolean
+removeItem() : void
+setName() : void
+getID() : long
+getCurrentWeight() : double
+getName() : String
+isActive() : boolean
+setActive() : void
+getZone() : WarehouseZone
+getMaxWeight() : double
+getStored() : ArrayList
+}
+
+class ReceiptDispatch {
+customer : Customer
+ReceiptDispatch() : construct
+}
+
+class RecordProductMovement {
+ID : long
+date : LocalDate
+typeOfStorageItem : TypeOfStorageItem
+amount : int
+from : Cell
+where : Cell
+RecordProductMovement() : construct
+getID() : long
+getDate() : LocalDate
+getProduct() : TypeOfStorageItem
+getAmount() : int
+getFrom() : Cell
+getWhere() : Cell
+}
+
+class ProductGroupController {
+ProductGroupController() : construct
+}
+
+class MainViewController {
+LabelNameUser : Label
+tabPane : TabPane
+currentUser : User
+userList : ArrayList
+supplierList : ArrayList
+customerList : ArrayList
+positionList : ArrayList
+storageItemList : ArrayList
+zones : ArrayList
+MainViewController() : construct
+init() : void
+loadZones() : void
+loadProduct() : void
+loadUsers() : void
+loadCustomersAndSuppliers() : void
+loadPositions() : void
+toUsersView() : void
+toPositionView() : void
+toContractorView() : void
+toMaterialList() : void
+toProductList() : void
+toZoneView() : void
+}
+
+class Position {
+ID : long
+name : String
+permissions : ArrayList
+isActive : boolean
+Position() : construct
+addPermission() : void
+hasPermissions() : boolean
+removePermissions() : void
+getName() : String
+setName() : void
+getPermissions() : ArrayList
+setPermissions() : void
+getID() : long
+toString() : String
+clone() : Position
+}
+
+class LoginViewController {
+TFPassword : PasswordField
+TFLogin : TextField
+currentUser : User
+LoginViewController() : construct
+Action_btnSigIn() : void
+enterToProgram() : void
+}
+
+class ProductListController {
+table : TableView
+idColumn : TableColumn
+nameColumn : TableColumn
+groupColumn : TableColumn
+weightColumn : TableColumn
+supplierColumn : TableColumn
+removeButton : Button
+filterCheckBox : CheckBox
+filterComboBox : ComboBox
+explainButton : Button
+products : ArrayList
+suppliers : ArrayList
+groupItems : ObservableList
+isProducts : boolean
+ProductListController() : construct
+init() : void
+configureUI() : void
+configureWeightColumn() : void
+toFirst() : void
+toLast() : void
+toExplain() : void
+addProduct() : void
+removeProduct() : void
+updateFilterCB() : void
+updateTable() : void
+cancelEditName() : void
+commitEditName() : void
+cancelEditGroup() : void
+commitEditGroup() : void
+cancelEditWeight() : void
+commitEditWeight() : void
+cancelEditSupplier() : void
+commitEditSupplier() : void
+}
+
+class Contractor {
+ID : long
+name : String
+address : String
+information : String
+passport : String
+phone : String
+bankRequisites : String
+IIN : String
+KPP : String
+isActive : boolean
+Contractor() : construct
+getID() : long
+getName() : String
+setName() : void
+getAddress() : String
+setAddress() : void
+getInformation() : String
+setInformation() : void
+getPassport() : String
+setPassport() : void
+getPhone() : String
+setPhone() : void
+getBankRequisites() : String
+setBankRequisites() : void
+getIIN() : String
+setIIN() : void
+getKPP() : String
+setKPP() : void
+isActive() : boolean
+setActive() : void
+toString() : String
+clone() : Contractor
+}
+
+class User {
+ID : Long
+name : String
+position : Position
+login : String
+password : String
+isActive : boolean
+User() : construct
+setName() : void
+getName() : String
+getID() : Long
+getPosition() : Position
+setPosition() : void
+getLogin() : String
+setLogin() : void
+getPassword() : String
+setPassword() : void
+isActive() : boolean
+setActive() : void
+clone() : User
+}
+
+class Supplier {
+Supplier() : construct
+}
+
+class cellViewController {
+ComboBoxForFilter : ComboBox
+checkBoxForFilter : CheckBox
+table : TableView
+idClmn : TableColumn
+nameClmn : TableColumn
+zoneClmn : TableColumn
+weightClmn : TableColumn
+maxWeightClmn : TableColumn
+zones : ArrayList
+cells : ArrayList
+items : ObservableList
+cellViewController() : construct
+init() : void
+refresh() : void
+doFilter() : void
+toFirst() : void
+toLast() : void
+}
+
+class UsersViewController {
+userTable : TableView
+idColumn : TableColumn
+nameColumn : TableColumn
+positionColumn : TableColumn
+loginColumn : TableColumn
+passwordColumn : TableColumn
+activeColumn : TableColumn
+CheckBoxFilter : CheckBox
+ComboBoxFilter : ComboBox
+searchTF : TextField
+usersBefore : ArrayList
+positions : ArrayList
+data : ObservableList
+UsersViewController() : construct
+init() : void
+setCellValueFactory() : void
+configColumns() : void
+configActiveColumn() : void
+configPasswordColumn() : void
+configLoginColumn() : void
+configNameColumn() : void
+configPositionColumn() : void
+showInvalidLoginErrorDialog() : void
+showShortPasswordErrorDialog() : void
+showShortLoginErrorDialog() : void
+isDuplicateLogin() : boolean
+toFirst() : void
+toLast() : void
+addUser() : void
+toSearch() : void
+showNotification() : void
+toFilter() : void
+}
+
+class createWarehouseZoneController {
+btn : Button
+zoneNameField : TextField
+lengthField : TextField
+widthField : TextField
+CBoxZoneFor : ComboBox
+maxWeightField : TextField
+zones : ArrayList
+createWarehouseZoneController() : construct
+init() : void
+showAlert() : void
+btnClick() : void
+}
+
+class Receipt {
+ID : long
+date : LocalDate
+cell : Cell
+performer : User
+author : User
+invoiceNumberField : int
+Receipt() : construct
+getID() : long
+getDate() : LocalDate
+getZoneCell() : Cell
+getPerformer() : User
+getAuthor() : User
+getInvoiceNumberField() : int
+}
+
+class ReceiptSupply {
+supplier : Supplier
+ReceiptSupply() : construct
+getSupplier() : Supplier
+}
+
+class WarehouseZone {
+ID : Long
+zoneName : String
+cells : Cell[][]
+isActive : boolean
+isProductZone : boolean
+maxWeight : Double
+WarehouseZone() : construct
+getZoneName() : String
+setZoneName() : void
+getCells() : Cell[][]
+setCells() : void
+getID() : Long
+isActive() : boolean
+setActive() : void
+isProductZone() : boolean
+getMaxWeight() : Double
+setProductZone() : void
+toString() : String
+}
+
+class Customer {
+Customer() : construct
+}
+
+class TypeOfStorageItem {
+ID : long
+name : String
+groupItems : String
+weight : double
+supplier : Supplier
+isProduct : boolean
+isActive : boolean
+TypeOfStorageItem() : construct
+getName() : String
+setName() : void
+getID() : long
+getGroup() : String
+setGroup() : void
+getWeight() : double
+setWeight() : void
+getSupplier() : Supplier
+setSupplier() : void
+isProduct() : boolean
+setProduct() : void
+isActive() : boolean
+setActive() : void
+}
+
+enum Permission {
+EditingUsersAndPositions : construct
+EditingWarehouseInformation : construct
+ProductAddition : construct
+ProductEditing : construct
+ProductRemoving : construct
+ViewingReportsMovement : construct
+ViewProductInformation : construct
+Permission() : construct
+values() : construct
+valueOf() : construct
+}
+
+class HelloApplication {
+HelloApplication() : construct
+start() : void
+main() : void
+}
+
+
+createStorageItemController --> Supplier
+createStorageItemController --> TypeOfStorageItem
+ContractorController --> Customer
+ContractorController --> Contractor
+ContractorController --> Supplier
+ZoneViewController --> createWarehouseZoneController
+ZoneViewController --> WarehouseZone
+PositionViewController --> Position
+PositionViewController --> Permission
+createUserController --> User
+createUserController --> UsersViewController
+createUserController --> Position
+productOnStorageController --> Supplier
+productOnStorageController --> TypeOfStorageItem
+stockReplenishmentController --> User
+stockReplenishmentController --> WarehouseZone
+stockReplenishmentController --> Supplier
+stockReplenishmentController --> Cell
+stockReplenishmentController --> ReceiptSupply
+stockReplenishmentController --> TypeOfStorageItem
+Cell --> WarehouseZone
+Cell --> TypeOfStorageItem
+ReceiptDispatch --|> Receipt
+ReceiptDispatch --> User
+ReceiptDispatch --> Customer
+ReceiptDispatch --> Cell
+RecordProductMovement --> Cell
+RecordProductMovement --> TypeOfStorageItem
+MainViewController --> User
+MainViewController --> Position
+MainViewController --> Customer
+MainViewController --> WarehouseZone
+MainViewController --> Permission
+MainViewController --> Supplier
+MainViewController --> TypeOfStorageItem
+Position ..|> Cloneable
+Position --> Permission
+LoginViewController --> User
+LoginViewController --> MainViewController
+LoginViewController --> Position
+LoginViewController --> Permission
+ProductListController --> createStorageItemController
+ProductListController --> Supplier
+ProductListController --> TypeOfStorageItem
+Contractor ..|> Cloneable
+User --> Position
+Supplier --|> Contractor
+cellViewController --> WarehouseZone
+cellViewController --> Cell
+UsersViewController --> User
+UsersViewController --> Position
+UsersViewController --> createUserController
+createWarehouseZoneController --> WarehouseZone
+Receipt --> User
+Receipt --> Cell
+ReceiptSupply --|> Receipt
+ReceiptSupply --> User
+ReceiptSupply --> Supplier
+ReceiptSupply --> Cell
+ReceiptSupply --> TypeOfStorageItem
+WarehouseZone --> Cell
+Customer --|> Contractor
+TypeOfStorageItem --> Supplier
+HelloApplication --|> Application
+
+@enduml

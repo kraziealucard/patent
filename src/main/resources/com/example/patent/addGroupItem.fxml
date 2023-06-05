@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="5.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.patent.CreateGroupController">
+   <HBox alignment="CENTER_LEFT" spacing="5.0">
+      <children>
+         <Label text="Название группы: " />
+          <TextField fx:id="groupNameTextField" />
+      </children>
+   </HBox>
+    <Button onAction="#addButtonClicked" text="Добавить" />
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</VBox>

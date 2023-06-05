@@ -1,0 +1,41 @@
+#userTable {
+    -fx-font-size: 14pt;
+    -fx-table-cell-border-color: #cccccc;
+}
+
+#idColumn, #nameColumn, #positionColumn, #loginColumn, #passwordColumn, #activeColumn {
+    -fx-alignment: CENTER-LEFT;
+}
+
+#searchTF {
+    -fx-prompt-text-fill: #aaaaaa;
+    -fx-background-color: #f2f2f2;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 3;
+}
+
+#CheckBoxFilter {
+    -fx-text-fill: #444444;
+}
+
+#ComboBoxFilter {
+    -fx-background-color: #f2f2f2;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 3;
+}
+
+.button {
+    -fx-background-color: #0077c2;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14pt;
+    -fx-padding: 5 10;
+    -fx-border-radius: 3;
+}
+
+.button:hover {
+    -fx-background-color: #005ea6;
+}
+
+#userTable .table-column {
+    -fx-alignment: CENTER-LEFT;
+}
