@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<GridPane alignment="CENTER" hgap="10" minWidth="702.0" style="#stylePosition.css" vgap="10" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.Controller.PositionViewController">
+    <columnConstraints>
+        <ColumnConstraints hgrow="ALWAYS" />
+        <ColumnConstraints percentWidth="40.0" />
+        <ColumnConstraints />
+    </columnConstraints>
+    <rowConstraints>
+        <RowConstraints />
+        <RowConstraints />
+        <RowConstraints />
+        <RowConstraints />
+    </rowConstraints>
+    <HBox alignment="BOTTOM_LEFT" GridPane.columnSpan="2">
+        <children>
+
+            <Label text="Список должностей:">
+                <HBox.margin>
+                    <Insets bottom="5.0" />
+                </HBox.margin>
+            </Label>
+            <TextField maxWidth="1.7976931348623157E308" prefHeight="26.0" promptText="Поиск..." HBox.hgrow="ALWAYS">
+                <HBox.margin>
+                    <Insets left="5.0" />
+                </HBox.margin>
+            </TextField>
+        </children>
+        <padding>
+            <Insets left="5.0" right="5.0" top="5.0" />
+        </padding>
+    </HBox>
+    <ListView fx:id="positionListView" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS" />
+    <VBox GridPane.columnIndex="1" GridPane.rowIndex="1">
+        <children>
+            <HBox alignment="CENTER">
+                <children>
+
+                    <Label prefHeight="18.0" prefWidth="134.0" text="Название должности:" />
+                    <TextField fx:id="positionNameField" disable="true" onAction="#TFAction">
+                        <HBox.margin>
+                            <Insets left="5.0" />
+                        </HBox.margin>
+                    </TextField>
+                </children>
+                <padding>
+                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                </padding>
+            </HBox>
+            <VBox>
+                <children>
+                    <HBox alignment="CENTER">
+                        <children>
+
+                            <Label prefHeight="34.0" prefWidth="59.0" text="Права доступа:" wrapText="true" />
+                            <VBox spacing="10.0">
+                                <CheckBox fx:id="CBEditUserAndRole" disable="true" onAction="#setEditUserAndRolePermissions" prefHeight="34.0" prefWidth="206.0" text="Редактирование &#10;пользователей и должностей" VBox.vgrow="ALWAYS">
+                                    <VBox.margin>
+                                        <Insets />
+                                    </VBox.margin>
+                                </CheckBox>
+                                <CheckBox fx:id="CBWarehouseEdit" disable="true" onAction="#setWarehouseEditPermissions" text="Редактирование&#10;информации о складе" VBox.vgrow="ALWAYS">
+                                    <VBox.margin>
+                                        <Insets top="5.0" />
+                                    </VBox.margin>
+                                </CheckBox>
+                                <CheckBox fx:id="CBEditProduct" disable="true" onAction="#setEditProductType" text="Редактирование информации &#10;о запасах" VBox.vgrow="ALWAYS">
+                                    <VBox.margin>
+                                        <Insets top="5.0" />
+                                    </VBox.margin>
+                                </CheckBox>
+                        <CheckBox fx:id="CBEditLogistics" disable="true" layoutX="15.0" layoutY="159.0" onAction="#setEditLogisticsPermissions" prefHeight="34.0" prefWidth="206.0" text="Управление логистикой&#10;запасов" />
+                        <CheckBox fx:id="CBEditCounterpart" disable="true" layoutX="15.0" layoutY="20.0" onAction="#setEditCounterparty" prefHeight="34.0" prefWidth="206.0" text="Редактирование контрагентов" />
+                                <CheckBox fx:id="CBViewBooks" disable="true" onAction="#setViewBook" text="Просмотр книг записей" VBox.vgrow="ALWAYS">
+                                    <VBox.margin>
+                                        <Insets top="5.0" />
+                                    </VBox.margin>
+                                </CheckBox>
+                                <HBox.margin>
+                                    <Insets left="5.0" />
+                                </HBox.margin>
+                        <padding>
+                           <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                        </padding>
+                            </VBox>
+                        </children>
+                        <opaqueInsets>
+                            <Insets />
+                        </opaqueInsets>
+                  <padding>
+                     <Insets top="5.0" />
+                  </padding>
+                    </HBox>
+                </children>
+            </VBox>
+        </children>
+    </VBox>
+
+    <HBox alignment="BOTTOM_LEFT" spacing="10" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="2">
+        <Button onAction="#addPosition" text="Добавить" HBox.hgrow="ALWAYS">
+            <opaqueInsets>
+                <Insets />
+            </opaqueInsets>
+            <HBox.margin>
+                <Insets left="5.0" />
+            </HBox.margin>
+        </Button>
+        <Button fx:id="btnRemovePosition" disable="true" onAction="#removePosition" text="Удалить" HBox.hgrow="ALWAYS" />
+        <padding>
+            <Insets bottom="5.0" left="5.0" />
+        </padding>
+    </HBox>
+</GridPane>

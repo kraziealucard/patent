@@ -10,6 +10,6 @@ module com.example.patent {
             requires org.kordamp.bootstrapfx.core;
             requires com.almasb.fxgl.all;
     
-    opens com.example.patent to javafx.fxml;
-    exports com.example.patent;
+    opens com.example.Controller to javafx.fxml;
+    exports com.example.Controller;
 }
