@@ -2,8 +2,8 @@ package Model;
 
 import java.util.ArrayList;
 
-public class Position implements Cloneable {
-    long ID;
+public class Position {
+    private long ID;
     private String name;
     private ArrayList<Permission> permissions;
     private boolean isActive;
@@ -12,6 +12,7 @@ public class Position implements Cloneable {
         this.ID = ID;
         this.name = name;
         this.permissions = permissions;
+        this.isActive = true;
     }
 
     public void addPermission(Permission permission) {
@@ -54,14 +55,16 @@ public class Position implements Cloneable {
         return name;
     }
 
-    @Override
-    public Position clone() {
-        try {
-            Position cloned = (Position) super.clone();
-            cloned.permissions = new ArrayList<>(this.permissions);
-            return cloned;
-        } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
-        }
+    public void setID(long ID) {
+        this.ID = ID;
     }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
 }

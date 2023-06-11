@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.Position;
 import Model.User;
 import javafx.collections.FXCollections;
@@ -19,15 +20,19 @@ public class createUserController {
     public Button saveButton;
     public Label labelNameWindow;
     public GridPane root;
-    private ArrayList<User> users;
-    private UsersViewController usersViewController;
+    private ArrayList<Position> positions;
+    private DAOFactory dao;
 
-    public void init(ArrayList<User> users,ArrayList<Position> positions,UsersViewController usersViewController){
-        this.usersViewController=usersViewController;
-        this.users=users;
+    public void init(DAOFactory dao) {
+        this.dao = dao;
+        updatePositions();
         labelNameWindow.setText("Создание новой записи");
         positionComboBox.setItems(FXCollections.observableArrayList(positions));
         positionComboBox.getSelectionModel().selectFirst();
+    }
+
+    private void updatePositions() {
+        this.positions = dao.getPositionDAO().getPositionList(true);
     }
 
     private boolean areAllTextFieldsFilled() {
@@ -52,9 +57,7 @@ public class createUserController {
             alert.showAndWait();
             return;
         }
-        User newUser=new User((long) (users.size() + 1),nameTextField.getText(),positionComboBox.getValue(),loginTextField.getText(),passwordTextField.getText());
-        users.add(newUser);
-        usersViewController.showNotification(newUser.getName());
-        ((Stage)nameTextField.getScene().getWindow()).close();
+
+        ((Stage) nameTextField.getScene().getWindow()).close();
     }
 }

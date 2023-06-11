@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -20,9 +21,6 @@ public class MainViewController {
     public Button ContractorsBtn;
     public Button ProductListBtn;
     public Button MaterialListBtn;
-    
-    
-    
     public VBox catalogsVbox;
     public Button myCompanyBtn;
     public Button productOnStorageBtn;
@@ -48,10 +46,12 @@ public class MainViewController {
     private ArrayList<ReceiptSupply> receiptSupplies;
     private ArrayList<ReceiptDispatch> receiptDispatches;
     private ArrayList<ReceiptMovement> receiptMovements;
+    private DAOFactory dao;
 
-    public void init(User user) {
-        loadGroupList();
+    public void init(DAOFactory dao, User user) {
+        this.dao = dao;
         loadPositions();
+        loadGroupList();
         loadCustomersAndSuppliers();
         loadUsers();
         loadStorageItemList();
@@ -59,13 +59,14 @@ public class MainViewController {
         loadReceiptsSupplies();
         loadReceiptsDispatches();
         loadReceiptsMovements();
-        currentUser = userList.get(0);
+        currentUser = user;
 
         settingAccess();
         recordMenuClick();
+        tabPane.requestFocus();
     }
 
-    private void settingAccess(){
+    private void settingAccess() {
         for (int i = 0; i < catalogsVbox.getChildren().size(); i++) {
             catalogsVbox.getChildren().get(i).setManaged(false);
             catalogsVbox.getChildren().get(i).setVisible(false);
@@ -76,10 +77,9 @@ public class MainViewController {
             recordsVbox.getChildren().get(i).setVisible(false);
         }
 
-        ArrayList<Permission> currentPermissions=currentUser.getPosition().getPermissions();
+        ArrayList<Permission> currentPermissions = currentUser.getPosition().getPermissions();
         for (int i = 0; i < currentPermissions.size(); i++) {
-            switch (currentPermissions.get(i))
-            {
+            switch (currentPermissions.get(i)) {
                 case EditingContactor -> {
                     ContractorsBtn.setManaged(true);
                     ContractorsBtn.setVisible(true);
@@ -141,11 +141,18 @@ public class MainViewController {
             myCompanyBtn.setManaged(true);
             myCompanyBtn.setVisible(true);
         }
+
     }
 
 
-    private void loadGroupList(){groupItemsList=new ArrayList<>();}
-    private void loadReceiptsMovements(){receiptMovements=new ArrayList<>();}
+    private void loadGroupList() {
+        groupItemsList = new ArrayList<>();
+    }
+
+    private void loadReceiptsMovements() {
+        receiptMovements = new ArrayList<>();
+    }
+
     private void loadReceiptsDispatches() {
         receiptDispatches = new ArrayList<>();
     }
@@ -168,14 +175,14 @@ public class MainViewController {
         typeOfStorageItemList.add(tampM);
     }
 
-    private void loadUsers() {
-        userList = new ArrayList<>();
-        userList.add(new User(1L, "Админнистратор", positionList.get(0), "****************", "***************"));
-        User notAdmin = new User(2L, "Не админ", positionList.get(1), "123", "123");
-        userList.add(notAdmin);
-        notAdmin.setActive(true);
-        userList.get(0).setActive(true);
+    private void loadPositions() {
+        positionList = dao.getPositionDAO().getPositionList(false);
     }
+
+    private void loadUsers() {
+        userList = dao.getUserDAO().getUserList(false, positionList);
+    }
+
     private void loadCustomersAndSuppliers() {
         customerList = new ArrayList<>();
         customerList.add(new Customer(-1, "Customer"));
@@ -184,15 +191,6 @@ public class MainViewController {
         supplierList = new ArrayList<>();
         supplierList.add(new Supplier(-1, "Supplier"));
         supplierList.get(0).setActive(true);
-    }
-
-    private void loadPositions() {
-        positionList = new ArrayList<>();
-        Position admin = new Position(1, "Администратор",
-                new ArrayList<Permission>(Arrays.stream(Permission.values()).toList()));
-        Position notAdmin = new Position(2, "Не администратор", new ArrayList<>(Arrays.stream(Permission.values()).toList()));
-        positionList.add(admin);
-        positionList.add(notAdmin);
     }
 
     public void toUsersView(ActionEvent actionEvent) throws IOException {
@@ -209,7 +207,7 @@ public class MainViewController {
         tab.setContent(root);
 
         UsersViewController usersViewController = fxmlLoader.getController();
-        usersViewController.init(currentUser, userList, positionList);
+        usersViewController.init(dao, tab, userList, positionList, currentUser);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -227,7 +225,7 @@ public class MainViewController {
         tab.setContent(root);
 
         PositionViewController positionViewController = fxmlLoader.getController();
-        positionViewController.init(positionList);
+        positionViewController.init(dao, tab, positionList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -264,7 +262,7 @@ public class MainViewController {
 
         ProductListController productListController = fxmlLoader.getController();
         productListController.explainButton.setVisible(false);
-        productListController.init(typeOfStorageItemList,groupItemsList, false);
+        productListController.init(typeOfStorageItemList, groupItemsList, false);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -283,7 +281,7 @@ public class MainViewController {
 
         ProductListController productListController = fxmlLoader.getController();
         productListController.explainButton.setVisible(false);
-        productListController.init(typeOfStorageItemList, groupItemsList,true);
+        productListController.init(typeOfStorageItemList, groupItemsList, true);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -313,7 +311,7 @@ public class MainViewController {
 
         tab.setContent(root);
         stockReplenishmentController stockReplenishmentController = fxmlLoader.getController();
-        stockReplenishmentController.init(receiptSupplies, typeOfStorageItemList, zones, supplierList, userList, currentUser, groupItemsList,true);
+        stockReplenishmentController.init(receiptSupplies, typeOfStorageItemList, zones, supplierList, userList, currentUser, groupItemsList, true);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -325,7 +323,7 @@ public class MainViewController {
 
         tab.setContent(root);
         stockReplenishmentController stockReplenishmentController = fxmlLoader.getController();
-        stockReplenishmentController.init(receiptSupplies, typeOfStorageItemList, zones, supplierList, userList, currentUser, groupItemsList,false);
+        stockReplenishmentController.init(receiptSupplies, typeOfStorageItemList, zones, supplierList, userList, currentUser, groupItemsList, false);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -397,7 +395,7 @@ public class MainViewController {
         tab.setContent(root);
 
         BooksController productListController = fxmlLoader.getController();
-        productListController.init(receiptSupplies, receiptDispatches,receiptMovements,userList,supplierList,customerList,tabPane);
+        productListController.init(receiptSupplies, receiptDispatches, receiptMovements, userList, supplierList, customerList, tabPane);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -432,7 +430,7 @@ public class MainViewController {
         tabPane.getSelectionModel().select(tab);
     }
 
-    public void catalogMenuClick(){
+    public void catalogMenuClick() {
         recordsVbox.setVisible(false);
         recordsVbox.setManaged(false);
 
