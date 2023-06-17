@@ -9,7 +9,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class ContractorController {
@@ -376,5 +378,18 @@ public class ContractorController {
 
     public void TFkppAction(ActionEvent actionEvent) {
         table.requestFocus();
+    }
+
+    public void toExcel(ActionEvent actionEvent) {
+        if (table.getItems() == null) return;
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить в Excel файл");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel файлы", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(table.getScene().getWindow());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+            ExcelConverter.convertToExcel(table, filePath);
+        }
     }
 }

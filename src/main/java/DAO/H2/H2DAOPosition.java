@@ -8,17 +8,16 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class H2DAOPosition implements IPositionDAO {
-    private final String DB_URL;
+    private final Connection connection;
 
-    public H2DAOPosition(String DB_URL) {
-        this.DB_URL = DB_URL;
+    public H2DAOPosition(Connection connection) {
+        this.connection = connection;
     }
 
     @Override
     public ArrayList<Position> getPositionList(boolean onlyActive) {
         ArrayList<Position> loadedPositions = new ArrayList<>();
-        try (Connection dbConnection = DriverManager.getConnection(DB_URL)) {
-            Statement statement = dbConnection.createStatement();
+        try (Statement statement = connection.createStatement();) {
             String sql = "SELECT * FROM Positions";
             if (onlyActive) {
                 sql += " WHERE isActive = true";
@@ -71,12 +70,11 @@ public class H2DAOPosition implements IPositionDAO {
     @Override
     public boolean updatePosition(Position position) {
         boolean isSuccessful = false;
-        try (Connection dbConnection = DriverManager.getConnection(DB_URL)) {
-            PreparedStatement statement = dbConnection.prepareStatement(
-                    "UPDATE Positions SET name = ?, isActive = ?, EditingUsersAndPositions = ?, " +
-                            "EditingWarehouseInformation = ?, ProductEditing = ?, ProductLogistic = ?, " +
-                            "EditingContactor = ?, ViewBook = ? WHERE ID = ?"
-            );
+        try (PreparedStatement statement = connection.prepareStatement(
+                "UPDATE Positions SET name = ?, isActive = ?, EditingUsersAndPositions = ?, " +
+                        "EditingWarehouseInformation = ?, ProductEditing = ?, ProductLogistic = ?, " +
+                        "EditingContactor = ?, ViewBook = ? WHERE ID = ?")) {
+
             statement.setString(1, position.getName());
             statement.setBoolean(2, position.isActive());
             statement.setBoolean(3, position.hasPermissions(Permission.EditingUsersAndPositions));
@@ -98,13 +96,13 @@ public class H2DAOPosition implements IPositionDAO {
     @Override
     public long addPosition(Position position) {
         long newID = -1;
-        try (Connection dbConnection = DriverManager.getConnection(DB_URL)) {
-            PreparedStatement statement = dbConnection.prepareStatement(
-                    "INSERT INTO Positions (name, isActive, EditingUsersAndPositions, EditingWarehouseInformation, " +
-                            "ProductLogistic, ProductEditing, EditingContactor, ViewBook) " +
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    Statement.RETURN_GENERATED_KEYS
-            );
+        try (
+                PreparedStatement statement = connection.prepareStatement(
+                        "INSERT INTO Positions (name, isActive, EditingUsersAndPositions, EditingWarehouseInformation, " +
+                                "ProductLogistic, ProductEditing, EditingContactor, ViewBook) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        Statement.RETURN_GENERATED_KEYS
+                )) {
             statement.setString(1, position.getName());
             statement.setBoolean(2, position.isActive());
             statement.setBoolean(3, position.hasPermissions(Permission.EditingUsersAndPositions));

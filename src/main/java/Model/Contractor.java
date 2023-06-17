@@ -1,6 +1,6 @@
 package Model;
 
-public abstract class Contractor implements Cloneable{
+public abstract class Contractor implements Cloneable {
     private final long ID;
     private String name;
     private String address;
@@ -10,62 +10,77 @@ public abstract class Contractor implements Cloneable{
     private String bankRequisites;
     private String IIN;
     private String KPP;
-
     private boolean isActive;
 
-    public Contractor(long ID,String name) {
-        this.ID=ID;
+    public Contractor(long ID, String name) {
+        this.ID = ID;
         this.name = name;
     }
 
     public long getID() {
         return ID;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getAddress() {
         return address;
     }
+
     public void setAddress(String address) {
         this.address = address;
     }
+
     public String getInformation() {
         return information;
     }
+
     public void setInformation(String information) {
         this.information = information;
     }
+
     public String getPassport() {
         return passport;
     }
+
     public void setPassport(String passport) {
         this.passport = passport;
     }
+
     public String getPhone() {
         return phone;
     }
+
     public void setPhone(String phone) {
         this.phone = phone;
     }
+
     public String getBankRequisites() {
         return bankRequisites;
     }
+
     public void setBankRequisites(String bankRequisites) {
         this.bankRequisites = bankRequisites;
     }
+
     public String getIIN() {
         return IIN;
     }
+
     public void setIIN(String IIN) {
         this.IIN = IIN;
     }
+
     public String getKPP() {
         return KPP;
     }
+
     public void setKPP(String KPP) {
         this.KPP = KPP;
     }

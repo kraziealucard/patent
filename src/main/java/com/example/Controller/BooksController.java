@@ -8,7 +8,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -18,7 +20,7 @@ import java.util.Objects;
 public class BooksController {
 
     public TableView<Receipt> table;
-    public TableColumn<Receipt,Long> IDColumn;
+    public TableColumn<Receipt, Long> IDColumn;
     public TableColumn<Receipt, LocalDate> dateColumn;
     public TableColumn<Receipt, User> userColumn;
     public RadioButton RSupply;
@@ -40,34 +42,33 @@ public class BooksController {
     private ArrayList<Supplier> suppliers;
     private ArrayList<Customer> customers;
     private ArrayList<User> users;
-    private  ToggleGroup toggleGroup;
+    private ToggleGroup toggleGroup;
     private TabPane tabPane;
 
-    public void init(ArrayList<ReceiptSupply> receiptSupplies,ArrayList<ReceiptDispatch> receiptDispatches,ArrayList<ReceiptMovement> receiptMovements,
-                     ArrayList<User> users, ArrayList<Supplier> suppliers, ArrayList<Customer> customers,TabPane tabPane)
-    {
-        this.receiptSupplies=receiptSupplies;
-        this.receiptDispatches=receiptDispatches;
-        this.receiptMovements=receiptMovements;
-        this.users=users;
-        this.suppliers=suppliers;
-        this.customers=customers;
-        this.tabPane=tabPane;
-        toggleGroup=new ToggleGroup();
+    public void init(ArrayList<ReceiptSupply> receiptSupplies, ArrayList<ReceiptDispatch> receiptDispatches, ArrayList<ReceiptMovement> receiptMovements,
+                     ArrayList<User> users, ArrayList<Supplier> suppliers, ArrayList<Customer> customers, TabPane tabPane) {
+        this.receiptSupplies = receiptSupplies;
+        this.receiptDispatches = receiptDispatches;
+        this.receiptMovements = receiptMovements;
+        this.users = users;
+        this.suppliers = suppliers;
+        this.customers = customers;
+        this.tabPane = tabPane;
+        toggleGroup = new ToggleGroup();
 
-        typeOfItemComboBox.setItems(FXCollections.observableArrayList("Товары","Материалы"));
+        typeOfItemComboBox.setItems(FXCollections.observableArrayList("Товары", "Материалы"));
         typeOfItemComboBox.getSelectionModel().selectFirst();
         configureUI();
     }
 
-    private void configureUI(){
+    private void configureUI() {
         configureTypeRadio();
         updatePersonComboBox();
         configureTable();
     }
 
-    private void updatePersonComboBox(){
-        ObservableList<Contractor> temp=FXCollections.observableArrayList();
+    private void updatePersonComboBox() {
+        ObservableList<Contractor> temp = FXCollections.observableArrayList();
         temp.addAll(suppliers);
         temp.addAll(customers);
         contractComboBox.setItems(temp);
@@ -75,7 +76,7 @@ public class BooksController {
         userComboBox.setItems(FXCollections.observableArrayList(users));
     }
 
-    private void configureTypeRadio(){
+    private void configureTypeRadio() {
         RSupply.setToggleGroup(toggleGroup);
         RMove.setToggleGroup(toggleGroup);
         RRepl.setToggleGroup(toggleGroup);
@@ -97,13 +98,13 @@ public class BooksController {
         RSupply.setSelected(true);
     }
 
-    private void configureTable(){
+    private void configureTable() {
         IDColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getID()));
         dateColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getDate()));
         userColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getPerformer()));
     }
 
-    private void sortOnTypeBook(List<Receipt> items){
+    private void sortOnTypeBook(List<Receipt> items) {
         if (RSupply.isSelected()) {
             items.addAll(receiptSupplies);
         }
@@ -120,34 +121,34 @@ public class BooksController {
         }
     }
 
-    private void sortOnTypeItem(List<Receipt> items){
+    private void sortOnTypeItem(List<Receipt> items) {
         if (!typeOfItemCheckBox.isSelected()) return;
-        boolean isProductType= Objects.equals(typeOfItemComboBox.getValue(), "Товары");
-        items.removeIf(item->item.isProduct()!=isProductType);
+        boolean isProductType = Objects.equals(typeOfItemComboBox.getValue(), "Товары");
+        items.removeIf(item -> item.isProduct() != isProductType);
     }
 
-    private void sortOnDate(List<Receipt> items){
-        if (inCheckBox.isSelected() && inDateP.getValue()!=null) {
+    private void sortOnDate(List<Receipt> items) {
+        if (inCheckBox.isSelected() && inDateP.getValue() != null) {
             items.removeIf(item -> item.getDate().isBefore(inDateP.getValue()));
         }
 
-        if (byCheckBox.isSelected() && byDateP.getValue()!=null){
+        if (byCheckBox.isSelected() && byDateP.getValue() != null) {
             items.removeIf(item -> item.getDate().isAfter(byDateP.getValue()));
         }
     }
 
-    private void sortOnPerson(List<Receipt> items){
+    private void sortOnPerson(List<Receipt> items) {
         if (contactorCheckBox.isSelected() && contractComboBox.getValue() != null && !RMove.isSelected()) {
             items.removeIf(item -> (item instanceof ReceiptMovement));
             items.removeIf(item -> {
-                        if (item instanceof ReceiptSupply) {
-                            return ((ReceiptSupply) item).getSupplier() != contractComboBox.getValue();
-                        }
-                        if (item instanceof ReceiptDispatch) {
-                            return ((ReceiptDispatch) item).getCustomer() != contractComboBox.getValue();
-                        }
-                        return false;
-                    });
+                if (item instanceof ReceiptSupply) {
+                    return ((ReceiptSupply) item).getSupplier() != contractComboBox.getValue();
+                }
+                if (item instanceof ReceiptDispatch) {
+                    return ((ReceiptDispatch) item).getCustomer() != contractComboBox.getValue();
+                }
+                return false;
+            });
         }
 
         if (userCheckBox.isSelected() && userComboBox.getValue() != null) {
@@ -155,8 +156,8 @@ public class BooksController {
         }
     }
 
-    public void refreshTable(){
-        List<Receipt> items= new ArrayList<>();
+    public void refreshTable() {
+        List<Receipt> items = new ArrayList<>();
         sortOnTypeBook(items);
         sortOnTypeItem(items);
         sortOnDate(items);
@@ -165,21 +166,21 @@ public class BooksController {
     }
 
     public void more(ActionEvent actionEvent) throws IOException {
-        Receipt select=table.getSelectionModel().getSelectedItem();
-        if (select==null) return;
-        if (select instanceof ReceiptMovement)showReceiptMovement((ReceiptMovement) select);
-        if (select instanceof ReceiptDispatch)showReceiptDispatch((ReceiptDispatch) select);
-        if (select instanceof ReceiptSupply)showReceiptSupply((ReceiptSupply) select);
+        Receipt select = table.getSelectionModel().getSelectedItem();
+        if (select == null) return;
+        if (select instanceof ReceiptMovement) showReceiptMovement((ReceiptMovement) select);
+        if (select instanceof ReceiptDispatch) showReceiptDispatch((ReceiptDispatch) select);
+        if (select instanceof ReceiptSupply) showReceiptSupply((ReceiptSupply) select);
     }
 
     private void showReceiptSupply(ReceiptSupply receipt) throws IOException {
         for (int i = 0; i < tabPane.getTabs().size(); i++) {
-            if (tabPane.getTabs().get(i).getText().equals("Запись о поступлении N"+receipt.getID())) {
+            if (tabPane.getTabs().get(i).getText().equals("Запись о поступлении N" + receipt.getID())) {
                 tabPane.getSelectionModel().select(i);
                 return;
             }
         }
-        Tab tab = new Tab("Запись о поступлении N"+receipt.getID());
+        Tab tab = new Tab("Запись о поступлении N" + receipt.getID());
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("stockReplenishment-view.fxml"));
         Parent root = fxmlLoader.load();
         tab.setContent(root);
@@ -192,12 +193,12 @@ public class BooksController {
 
     private void showReceiptDispatch(ReceiptDispatch receipt) throws IOException {
         for (int i = 0; i < tabPane.getTabs().size(); i++) {
-            if (tabPane.getTabs().get(i).getText().equals("Запись о отгрузке N"+receipt.getID())) {
+            if (tabPane.getTabs().get(i).getText().equals("Запись о отгрузке N" + receipt.getID())) {
                 tabPane.getSelectionModel().select(i);
                 return;
             }
         }
-        Tab tab = new Tab("Запись о отгрузке N"+receipt.getID());
+        Tab tab = new Tab("Запись о отгрузке N" + receipt.getID());
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("stockDispatch-veiw.fxml"));
         Parent root = fxmlLoader.load();
         tab.setContent(root);
@@ -210,12 +211,12 @@ public class BooksController {
 
     private void showReceiptMovement(ReceiptMovement receiptMovement) throws IOException {
         for (int i = 0; i < tabPane.getTabs().size(); i++) {
-            if (tabPane.getTabs().get(i).getText().equals("Запись о перемещении N"+receiptMovement.getID())) {
+            if (tabPane.getTabs().get(i).getText().equals("Запись о перемещении N" + receiptMovement.getID())) {
                 tabPane.getSelectionModel().select(i);
                 return;
             }
         }
-        Tab tab = new Tab("Запись о перемещении N"+receiptMovement.getID());
+        Tab tab = new Tab("Запись о перемещении N" + receiptMovement.getID());
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("movementProduct-view.fxml"));
         Parent root = fxmlLoader.load();
         tab.setContent(root);
@@ -224,5 +225,18 @@ public class BooksController {
         movementController.initForRead(receiptMovement);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
+    }
+
+    public void toExcel(ActionEvent actionEvent) {
+        if (table.getItems() == null) return;
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить в Excel файл");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel файлы", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(table.getScene().getWindow());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+            ExcelConverter.convertToExcel(table, filePath);
+        }
     }
 }

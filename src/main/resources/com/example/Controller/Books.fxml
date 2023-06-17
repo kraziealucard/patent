@@ -67,7 +67,7 @@
       <Separator layoutX="404.0" layoutY="15.0" orientation="VERTICAL" prefHeight="80.0" prefWidth="0.0" />
       <VBox alignment="CENTER_LEFT" spacing="10.0">
          <Button mnemonicParsing="false" onAction="#more" text="Подробнее" />
-         <Button layoutX="10.0" layoutY="10.0" minWidth="80.0" mnemonicParsing="false" text="Печать" />
+         <Button layoutX="10.0" layoutY="10.0" minWidth="80.0" mnemonicParsing="false" onAction="#toExcel" text="Печать" />
       </VBox>
    </HBox>
 </GridPane>

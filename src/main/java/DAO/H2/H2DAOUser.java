@@ -1,7 +1,6 @@
 package DAO.H2;
 
 import DAO.IUserDAO;
-import Model.Permission;
 import Model.Position;
 import Model.User;
 
@@ -10,18 +9,16 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 public class H2DAOUser implements IUserDAO {
-    private final String DB_URL;
+    private final Connection connection;
 
-    public H2DAOUser(String DB_URL) {
-        this.DB_URL = DB_URL;
+    public H2DAOUser(Connection connection) {
+        this.connection = connection;
     }
 
     @Override
     public long addUser(User user) {
-        long newID = -1;
-        try (Connection dbConnection = DriverManager.getConnection(DB_URL)) {
-            String query = "INSERT INTO Users (IDPosition, name, login, password, isActive) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement statement = dbConnection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        String query = "INSERT INTO Users (IDPosition, name, login, password, isActive) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             statement.setLong(1, user.getPosition().getID());
             statement.setString(2, user.getName());
             statement.setString(3, user.getLogin());
@@ -33,32 +30,33 @@ public class H2DAOUser implements IUserDAO {
             if (rowsInserted > 0) {
                 ResultSet generatedKeys = statement.getGeneratedKeys();
                 if (generatedKeys.next()) {
-                    newID = generatedKeys.getLong(1);
+                    return generatedKeys.getLong(1);
                 }
+                generatedKeys.close();
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        return newID;
+        return -1;
     }
 
     @Override
     public ArrayList<User> getUserList(boolean onlyActive, ArrayList<Position> positions) {
         ArrayList<User> loadedUsers = new ArrayList<>();
-        try (Connection dbConnection = DriverManager.getConnection(DB_URL)) {
-            Statement statement = dbConnection.createStatement();
-            String sql = "SELECT * FROM Users";
-            if (onlyActive) {
-                sql += " WHERE isActive = true";
-            }
-            ResultSet resultSet = statement.executeQuery(sql);
+
+        String sql = "SELECT * FROM Users";
+        if (onlyActive) {
+            sql += " WHERE isActive = true";
+        }
+
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(sql)) {
 
             while (resultSet.next()) {
-                Long userID = resultSet.getLong("ID");
+                long userID = resultSet.getLong("ID");
                 String name = resultSet.getString("name");
-                Long positionID = resultSet.getLong("IDPosition");
+                long positionID = resultSet.getLong("IDPosition");
                 String login = resultSet.getString("login");
                 String password = resultSet.getString("password");
                 boolean isActive = resultSet.getBoolean("isActive");
@@ -67,53 +65,82 @@ public class H2DAOUser implements IUserDAO {
                         .filter(position -> position.getID() == positionID)
                         .findFirst();
 
-                Position position = null;
-                if (optionalPosition.isPresent()) {
-                    position = optionalPosition.get();
-                }
+                Position position = optionalPosition.orElse(null);
 
                 User user = new User(userID, name, position, login, password);
                 user.setActive(isActive);
 
                 loadedUsers.add(user);
             }
-
-            return loadedUsers;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
 
+        return loadedUsers;
     }
 
     @Override
     public boolean updateUser(User user) {
-        boolean isSuccessful = false;
-        try (Connection dbConnection = DriverManager.getConnection(DB_URL)) {
-            PreparedStatement statement = dbConnection.prepareStatement(
-                    "UPDATE Users SET name = ?, login = ?, password = ?, isActive = ?, IDPosition = ? WHERE ID = ?"
-            );
+        String query = "UPDATE Users SET name = ?, login = ?, password = ?, isActive = ?, IDPosition = ? WHERE ID = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, user.getName());
             statement.setString(2, user.getLogin());
             statement.setString(3, user.getPassword());
             statement.setBoolean(4, user.isActive());
             statement.setLong(5, user.getPosition().getID());
             statement.setLong(6, user.getID());
-            statement.executeUpdate();
+            int rowsUpdated = statement.executeUpdate();
 
-            isSuccessful = true;
+            return rowsUpdated > 0;
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return isSuccessful;
-    }
-
-    @Override
-    public boolean userExists(String login) {
         return false;
     }
 
     @Override
-    public boolean userExists(String login, String Password) {
+    public boolean loginUserExists(String login) {
+        String query = "SELECT COUNT(*) FROM Users WHERE login = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, login);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                int count = resultSet.getInt(1);
+                return count > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         return false;
+    }
+
+    public User getUserByLoginAndPassword(String login, String password, ArrayList<Position> positions) {
+        String query = "SELECT * FROM Users WHERE login = ? AND password = ? AND isActive = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, login);
+            statement.setString(2, password);
+            statement.setBoolean(3, true);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                long userID = resultSet.getLong("ID");
+                String name = resultSet.getString("name");
+                long positionID = resultSet.getLong("IDPosition");
+
+                Optional<Position> optionalPosition = positions.stream()
+                        .filter(position -> position.getID() == positionID)
+                        .findFirst();
+
+                Position position = optionalPosition.orElse(null);
+
+                return new User(userID, name, position, login, password);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

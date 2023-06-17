@@ -26,8 +26,8 @@ public class PositionViewController {
     private ArrayList<Position> positions;
     DAOFactory dao;
 
-    public void init(DAOFactory dao, Tab tab, ArrayList<Position> positions) {
-        this.dao = dao;
+    public void init(ArrayList<Position> positions, Tab tab) {
+        //this.dao = dao;
         this.positions = positions;
         configureUI(tab);
     }
@@ -43,6 +43,7 @@ public class PositionViewController {
 
         tab.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) {
+                //this.positions = dao.getPositionDAO().getPositionList(true);
                 updateListView();
             }
         });

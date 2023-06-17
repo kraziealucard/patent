@@ -12,8 +12,8 @@ public interface IUserDAO {
 
     boolean updateUser(User user);
 
-    boolean userExists(String login);
+    boolean loginUserExists(String login);
 
-    boolean userExists(String login, String Password);
+    User getUserByLoginAndPassword(String login, String Password, ArrayList<Position> positions);
 
 }

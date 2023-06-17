@@ -90,5 +90,6 @@
                 <Insets right="5.0" />
             </HBox.margin>
         </Button>
+      <Button mnemonicParsing="false" onAction="#toExcel" text="Печать" />
     </HBox>
 </GridPane>

@@ -1,12 +1,8 @@
 package DAO.H2;
 
-import DAO.DAOFactory;
-import DAO.IPositionDAO;
-import DAO.IUserDAO;
+import DAO.*;
 import Model.Permission;
 import Model.Position;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 
 import java.io.File;
 import java.sql.*;
@@ -14,49 +10,75 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class H2DAOFactory extends DAOFactory {
-    private final String DB_URL;
+
+    private final H2DAOContractor DAOContractor;
+    private final H2DAOWarehouseZone DAOWarehouseZoneDAO;
+    private final H2DAOStorageItem DAOStorageItem;
+    private final H2DAOReceiptMovement DAOReceiptMovement;
+    private final H2DAOReceiptDispatch DAOReceiptDispatch;
+    private final H2DAOReceiptSupply DAOReceiptSupply;
     private final H2DAOPosition DAOPosition;
     private final H2DAOUser DAOUser;
+    private final H2DAOItemTypes DAOItemTypes;
+    private final H2DAOGroupItems DAOGroupItems;
+    private final Connection connection;
 
-    public H2DAOFactory() {
-        DB_URL = "jdbc:h2:" + System.getProperty("user.dir") + File.separator + "DB\\patentDB";
-        DAOPosition = new H2DAOPosition(DB_URL);
-        DAOUser = new H2DAOUser(DB_URL);
+    public H2DAOFactory() throws SQLException {
+        connection = DriverManager.getConnection("jdbc:h2:" + System.getProperty("user.dir") + File.separator + "DB\\patentDB");
+        DAOPosition = new H2DAOPosition(connection);
+        DAOUser = new H2DAOUser(connection);
+        DAOGroupItems = new H2DAOGroupItems(connection);
+        DAOItemTypes = new H2DAOItemTypes(connection);
+        DAOReceiptDispatch = new H2DAOReceiptDispatch(connection);
+        DAOReceiptMovement = new H2DAOReceiptMovement(connection);
+        DAOReceiptSupply = new H2DAOReceiptSupply(connection);
+        DAOStorageItem = new H2DAOStorageItem(connection);
+        DAOWarehouseZoneDAO = new H2DAOWarehouseZone(connection);
+        DAOContractor = new H2DAOContractor(connection);
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
+        } finally {
+            super.finalize();
+        }
     }
 
     public boolean isFirstStart() {
-        try (Connection dbConnection = DriverManager.getConnection(DB_URL)) {
-            try (Statement statement = dbConnection.createStatement()) {
-                String sql = "SELECT COUNT(*) AS table_count " +
-                        "FROM INFORMATION_SCHEMA.TABLES " +
-                        "WHERE TABLE_SCHEMA = 'PUBLIC'";
-                ResultSet resultSet = statement.executeQuery(sql);
+        try (Statement statement = connection.createStatement()) {
+            String sql = "SELECT COUNT(*) AS table_count " +
+                    "FROM INFORMATION_SCHEMA.TABLES " +
+                    "WHERE TABLE_SCHEMA = 'PUBLIC'";
+            ResultSet resultSet = statement.executeQuery(sql);
 
-                int tableCount = 0;
-                if (resultSet.next()) {
-                    tableCount = resultSet.getInt("table_count");
-                }
-                if (tableCount == 16) return false;
-
-                sql = "";
-                sql = createTablePositions(sql);
-                sql = createTableUsers(sql);
-                sql = createTableZones(sql);
-                sql = createTableCell(sql);
-                sql = createTableContractor(sql);
-                sql = createTableCustomer(sql);
-                sql = createTableSupplier(sql);
-                sql = createTableGroupTable(sql);
-                sql = createTableItemsTypes(sql);
-                sql = createTableReceiptDispatch(sql);
-                sql = createTableReceiptMovement(sql);
-                sql = createTableReceiptSupply(sql);
-                sql = createTableStorageItem(sql);
-                sql = createTableListOfReceiptDispatch(sql);
-                sql = createTableListOfReceiptMovement(sql);
-                sql = createTableListOfReceiptSupply(sql);
-                statement.executeUpdate(sql);
+            int tableCount = 0;
+            if (resultSet.next()) {
+                tableCount = resultSet.getInt("table_count");
             }
+            if (tableCount == 16) return false;
+
+            sql = "";
+            sql = createTablePositions(sql);
+            sql = createTableUsers(sql);
+            sql = createTableZones(sql);
+            sql = createTableCell(sql);
+            sql = createTableContractor(sql);
+            sql = createTableCustomer(sql);
+            sql = createTableSupplier(sql);
+            sql = createTableGroupTable(sql);
+            sql = createTableItemsTypes(sql);
+            sql = createTableReceiptDispatch(sql);
+            sql = createTableReceiptMovement(sql);
+            sql = createTableReceiptSupply(sql);
+            sql = createTableStorageItem(sql);
+            sql = createTableListOfReceiptDispatch(sql);
+            sql = createTableListOfReceiptMovement(sql);
+            sql = createTableListOfReceiptSupply(sql);
+            statement.executeUpdate(sql);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -167,7 +189,9 @@ public class H2DAOFactory extends DAOFactory {
                 CREATE TABLE IF NOT EXISTS GroupTable (
                     ID BIGINT PRIMARY KEY auto_increment,
                     name VARCHAR(30) NOT NULL,
+                    isProduct BOOLEAN NOT NULL,
                     IDParentGroup BIGINT NOT NULL,
+                    isActive BOOLEAN NOT NULL,
                     FOREIGN KEY (IDParentGroup) references GroupTable(ID)
                 );
                                 
@@ -207,14 +231,14 @@ public class H2DAOFactory extends DAOFactory {
 
     private String createTableReceiptMovement(String sql) {
         return sql += """
-                 CREATE TABLE IF NOT EXISTS ReceiptMovement (
-                    ID INT PRIMARY KEY auto_increment,
-                    date DATE,
-                    performerID INT,
-                    invoiceNumberField VARCHAR(255),
-                    isProduct BOOLEAN,
-                    FOREIGN KEY (performerID) REFERENCES Users(ID)
-                );
+                  CREATE TABLE IF NOT EXISTS ReceiptMovement (
+                      ID INT PRIMARY KEY auto_increment,
+                      date DATE,
+                      performerID INT,
+                      invoiceNumberField VARCHAR(255),
+                      isProduct BOOLEAN,
+                      FOREIGN KEY (performerID) REFERENCES Users(ID)
+                  );
                                 
                 """;
     }
@@ -242,7 +266,7 @@ public class H2DAOFactory extends DAOFactory {
                     IDItemsType BIGINT NOT NULL,
                     IDCell BIGINT NOT NULL,
                     IDSupplier BIGINT NOT NULL,
-                    IDCustomer BIGINT NOT NULL,
+                    IDCustomer BIGINT,
                     FOREIGN KEY (IDItemsType) references ITEMSTYPES(ID),
                     FOREIGN KEY (IDCell) references Cell(ID),
                     FOREIGN KEY (IDSupplier) references Supplier(ContractorID),
@@ -256,10 +280,10 @@ public class H2DAOFactory extends DAOFactory {
         return sql += """
                 CREATE TABLE IF NOT EXISTS ListOfReceiptDispatch (
                     ID INT PRIMARY KEY auto_increment,
-                    receiptID INT,
-                    itemID INT,
-                    amount INT,
-                    fromCellID INT,
+                    receiptID INT NOT NULL,
+                    itemID INT NOT NULL,
+                    amount INT NOT NULL,
+                    fromCellID INT NOT NULL,
                     FOREIGN KEY (receiptID) REFERENCES RECEIPTDispatch(ID),
                     FOREIGN KEY (itemID) REFERENCES StorageItem(ID),
                     FOREIGN KEY (fromCellID) REFERENCES Cell(ID)
@@ -272,11 +296,11 @@ public class H2DAOFactory extends DAOFactory {
         return sql += """
                 CREATE TABLE IF NOT EXISTS ListOfReceiptMovement (
                     ID INT PRIMARY KEY auto_increment,
-                    receiptID INT,
-                    itemID INT,
-                    amount INT,
-                    fromCellID INT,
-                    whereCellID INT,
+                    receiptID INT NOT NULL,
+                    itemID INT NOT NULL,
+                    amount INT NOT NULL,
+                    fromCellID INT NOT NULL,
+                    whereCellID INT NOT NULL,
                     FOREIGN KEY (receiptID) REFERENCES RECEIPTMOVEMENT(ID),
                     FOREIGN KEY (itemID) REFERENCES StorageItem(ID),
                     FOREIGN KEY (fromCellID) REFERENCES Cell(ID),
@@ -290,10 +314,10 @@ public class H2DAOFactory extends DAOFactory {
         return sql += """
                 CREATE TABLE IF NOT EXISTS ListOfReceiptSupply (
                     ID INT PRIMARY KEY auto_increment,
-                    receiptID INT,
-                    itemID INT,
-                    amount INT,
-                    whereCellID INT,
+                    receiptID INT NOT NULL,
+                    itemID INT NOT NULL,
+                    amount INT NOT NULL,
+                    whereCellID INT NOT NULL,
                     FOREIGN KEY (receiptID) REFERENCES RECEIPTSUPPLY (ID),
                     FOREIGN KEY (itemID) REFERENCES StorageItem(ID),
                     FOREIGN KEY (whereCellID) REFERENCES Cell(ID)
@@ -314,8 +338,49 @@ public class H2DAOFactory extends DAOFactory {
     }
 
     @Override
+    public IReceiptDispatchDAO getReceiptDispatchDAO() {
+        return DAOReceiptDispatch;
+    }
+
+    @Override
+    public IReceiptMovementDAO getReceiptMovementDAO() {
+        return DAOReceiptMovement;
+    }
+
+    @Override
+    public IReceiptSupplyDAO getReceiptSupplyDAO() {
+        return DAOReceiptSupply;
+    }
+
+    @Override
+    public IStorageItemDAO getStorageItemDAO() {
+        return DAOStorageItem;
+    }
+
+    @Override
     public IUserDAO getUserDAO() {
         return DAOUser;
     }
+
+    @Override
+    public IWarehouseZoneDAO getWarehouseZoneDAO() {
+        return DAOWarehouseZoneDAO;
+    }
+
+    @Override
+    public IContractorDAO getContactorDAO() {
+        return DAOContractor;
+    }
+
+    @Override
+    public IItemTypesDAO getItemTypesDAO() {
+        return DAOItemTypes;
+    }
+
+    @Override
+    public IGroupItemsDAO getGroupItemsDAO() {
+        return DAOGroupItems;
+    }
+
 
 }

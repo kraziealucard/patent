@@ -4,52 +4,72 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<GridPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.Controller.MainViewController">
+<GridPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="600.0"
+          xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"
+          fx:controller="com.example.Controller.MainViewController">
 
     <columnConstraints>
-        <ColumnConstraints maxWidth="176.99999237060547" minWidth="124.0" prefWidth="176.99999237060547" />
-        <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="10.0" prefWidth="422.8000076293945" />
+        <ColumnConstraints maxWidth="176.99999237060547" minWidth="124.0" prefWidth="176.99999237060547"/>
+        <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="10.0"
+                           prefWidth="422.8000076293945"/>
     </columnConstraints>
     <rowConstraints>
-        <RowConstraints minHeight="36.0" />
-        <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
+        <RowConstraints minHeight="36.0"/>
+        <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS"/>
     </rowConstraints>
-   <ButtonBar minHeight="36.0" nodeOrientation="RIGHT_TO_LEFT" GridPane.columnSpan="2">
-     <buttons>
-         <Button fx:id="catalogMenu" mnemonicParsing="false" onAction="#catalogMenuClick" text="Справочники" />
-       <Button fx:id="recordMenu" mnemonicParsing="false" onAction="#recordMenuClick" text="Записи" />
-     </buttons>
-      <padding>
-         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-      </padding>
-   </ButtonBar>
+    <ButtonBar minHeight="36.0" nodeOrientation="RIGHT_TO_LEFT" GridPane.columnSpan="2">
+        <buttons>
+            <Button fx:id="catalogMenu" mnemonicParsing="false" onAction="#catalogMenuClick" text="Настройка системы"/>
+            <Button fx:id="recordMenu" mnemonicParsing="false" onAction="#recordMenuClick"
+                    text="Операции с продукцией"/>
+        </buttons>
+        <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+        </padding>
+    </ButtonBar>
     <VBox alignment="CENTER" prefHeight="200.0" spacing="10.0" GridPane.rowIndex="1">
         <VBox fx:id="catalogsVbox" spacing="10.0">
             <padding>
-                <Insets left="5.0" />
+                <Insets left="5.0"/>
             </padding>
-            <Button fx:id="ProductListBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toProductList" text="Список товаров" />
-            <Button fx:id="MaterialListBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toMaterialList" text="Список материалов" />
-            <Button fx:id="UserBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toUsersView" text="Пользователи" />
-            <Button fx:id="PositionBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toPositionView" text="Должности" />
-            <Button fx:id="ZonesBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toZoneView" text="Зоны склада" />
-            <Button fx:id="ContractorsBtn" alignment="BASELINE_LEFT" layoutX="15.0" layoutY="190.0" minWidth="165.0" mnemonicParsing="false" onAction="#toContractorView" text="Контрагенты" />
-            <Button fx:id="myCompanyBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toContractorView" text="Реквизиты" />
+            <Button fx:id="ProductListBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toProductList" text="Список товаров"/>
+            <Button fx:id="MaterialListBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toMaterialList" text="Список материалов"/>
+            <Button fx:id="UserBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toUsersView" text="Пользователи"/>
+            <Button fx:id="PositionBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toPositionView" text="Должности"/>
+            <Button fx:id="ZonesBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toZoneView" text="Зоны склада"/>
+            <Button fx:id="ContractorsBtn" alignment="BASELINE_LEFT" layoutX="15.0" layoutY="190.0" minWidth="165.0"
+                    mnemonicParsing="false" onAction="#toContractorView" text="Контрагенты"/>
         </VBox>
         <VBox fx:id="recordsVbox" spacing="10.0">
             <padding>
-                <Insets left="5.0" />
+                <Insets left="5.0"/>
             </padding>
-            <Button fx:id="productOnStorageBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toProductOnWareHouse" text="Товары на складе" />
-            <Button fx:id="materialOnStorageBtn" alignment="BASELINE_LEFT" layoutX="15.0" layoutY="10.0" minWidth="165.0" mnemonicParsing="false" onAction="#toMaterialOnWareHouse" text="Материалы на складе" />
-            <Button fx:id="supplyProductBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toStockReplenishmentProduct" text="Поставка товаров" />
-            <Button fx:id="supplyMaterialBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toStockReplenishmentMaterial" text="Поставка материалов" />
-            <Button fx:id="dispProductBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toStockDispatchProduct" text="Отгрузка товаров" />
-         <Button fx:id="dispMaterialBtn" alignment="BASELINE_LEFT" layoutX="15.0" layoutY="154.0" minWidth="165.0" mnemonicParsing="false" onAction="#toStockDispatchMaterial" text="Отгрузка материалов" />
-            <Button fx:id="moveProductBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toMovementProduct" text="Перемещение товаров" />
-            <Button fx:id="moveMaterialBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toMovementMaterial" text="Перемещение материалов" />
-            <Button fx:id="bookBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false" onAction="#toBooksController" text="Книга записей" />
+            <Button fx:id="productOnStorageBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toProductOnWareHouse" text="Товары на складе"/>
+            <Button fx:id="materialOnStorageBtn" alignment="BASELINE_LEFT" layoutX="15.0" layoutY="10.0"
+                    minWidth="165.0" mnemonicParsing="false" onAction="#toMaterialOnWareHouse"
+                    text="Материалы на складе"/>
+            <Button fx:id="supplyProductBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toStockReplenishmentProduct" text="Поставка товаров"/>
+            <Button fx:id="supplyMaterialBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toStockReplenishmentMaterial" text="Поставка материалов"/>
+            <Button fx:id="dispProductBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toStockDispatchProduct" text="Отгрузка товаров"/>
+            <Button fx:id="dispMaterialBtn" alignment="BASELINE_LEFT" layoutX="15.0" layoutY="154.0" minWidth="165.0"
+                    mnemonicParsing="false" onAction="#toStockDispatchMaterial" text="Отгрузка материалов"/>
+            <Button fx:id="moveProductBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toMovementProduct" text="Перемещение товаров"/>
+            <Button fx:id="moveMaterialBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toMovementMaterial" text="Перемещение материалов"/>
+            <Button fx:id="bookBtn" alignment="BASELINE_LEFT" minWidth="165.0" mnemonicParsing="false"
+                    onAction="#toBooksController" text="Книга записей"/>
         </VBox>
     </VBox>
-    <TabPane fx:id="tabPane" tabClosingPolicy="ALL_TABS" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS" VBox.vgrow="ALWAYS" />
+    <TabPane fx:id="tabPane" tabClosingPolicy="ALL_TABS" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"
+             GridPane.rowIndex="1" GridPane.vgrow="ALWAYS" VBox.vgrow="ALWAYS"/>
 </GridPane>

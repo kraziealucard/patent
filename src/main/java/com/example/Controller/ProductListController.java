@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.GroupItems;
 import Model.TypeOfStorageItem;
 import javafx.beans.property.SimpleObjectProperty;
@@ -11,11 +12,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
-import javafx.stage.WindowEvent;
+import javafx.stage.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -27,18 +26,20 @@ public class ProductListController {
     public TreeView<GroupItems> ListGroup;
     public Button removeButton;
     public Button explainButton;
+    public Button saveToExcelButton;
     private ArrayList<TypeOfStorageItem> TypeOfStorageItem;
     private ArrayList<GroupItems> groupItems;
-
     private boolean isProducts;
     private TypeOfStorageItem itemForReturn;
 
-    public void init(ArrayList<TypeOfStorageItem> TypeOfStorageItem, ArrayList<GroupItems> groupItems, boolean isProducts) {
-        this.TypeOfStorageItem = TypeOfStorageItem;
+    public void init(ArrayList<TypeOfStorageItem> typeOfStorageItems, ArrayList<GroupItems> groupItems, boolean isProducts) {
+        //this.groupItems = dao.getGroupItemsDAO().getGroupItemsList(true);
+        //this.TypeOfStorageItem = dao.getItemTypesDAO().getTypeList(true, isProducts, groupItems);
         this.groupItems = groupItems;
+        this.TypeOfStorageItem = typeOfStorageItems;
         this.isProducts = isProducts;
 
-        ListGroup.setRoot(new TreeItem<>(new GroupItems(-1,"Все", isProducts)));
+        ListGroup.setRoot(new TreeItem<>(new GroupItems(-1, "Все", isProducts)));
 
         ListGroup.setOnMouseClicked(mouseEvent -> {
             TreeItem<GroupItems> selectedItem = ListGroup.getSelectionModel().getSelectedItem();
@@ -53,13 +54,26 @@ public class ProductListController {
         createContextMenu();
     }
 
-    private void createContextMenu(){
+    public void toExcel() {
+        if (table.getItems() == null) return;
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить в Excel файл");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel файлы", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(table.getScene().getWindow());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+            ExcelConverter.convertToExcel(table, filePath);
+        }
+    }
+
+    private void createContextMenu() {
         ContextMenu contextMenu = new ContextMenu();
 
         MenuItem deleteItem = new MenuItem("Удалить");
         deleteItem.setOnAction(event -> {
             TreeItem<GroupItems> selectedItem = ListGroup.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && selectedItem!=ListGroup.getRoot()) {
+            if (selectedItem != null && selectedItem != ListGroup.getRoot()) {
                 groupItems.remove(selectedItem.getValue());
                 selectedItem.getParent().getChildren().remove(selectedItem);
             }
@@ -97,27 +111,25 @@ public class ProductListController {
                 }
             });
             GroupItems value;
-            if (selectedItem==ListGroup.getRoot() || selectedItem==null){
-                value=null;
-            }
-            else {
-                value=selectedItem.getValue();
+            if (selectedItem == ListGroup.getRoot() || selectedItem == null) {
+                value = null;
+            } else {
+                value = selectedItem.getValue();
             }
             CreateGroupController controller = fxmlLoader.getController();
-            controller.init(groupItems,value,isProducts);
+            controller.init(groupItems, value, isProducts);
             stage.setResizable(false);
             stage.show();
 
         });
 
-        contextMenu.getItems().addAll(deleteItem,create);
+        contextMenu.getItems().addAll(deleteItem, create);
 
-        contextMenu.setOnShowing(event->{
+        contextMenu.setOnShowing(event -> {
             TreeItem<GroupItems> selectedItem = ListGroup.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && selectedItem!=ListGroup.getRoot()) {
+            if (selectedItem != null && selectedItem != ListGroup.getRoot()) {
                 deleteItem.setDisable(false);
-            }
-            else deleteItem.setDisable(true);
+            } else deleteItem.setDisable(true);
         });
 
         ListGroup.setContextMenu(contextMenu);
@@ -260,14 +272,12 @@ public class ProductListController {
         });
         createTypeStorageItemController controller = fxmlLoader.getController();
         GroupItems groupForNewType;
-        if (ListGroup.getSelectionModel().getSelectedItem()==ListGroup.getRoot() || ListGroup.getSelectionModel().getSelectedItem()==null)
-        {
-            groupForNewType=null;
+        if (ListGroup.getSelectionModel().getSelectedItem() == ListGroup.getRoot() || ListGroup.getSelectionModel().getSelectedItem() == null) {
+            groupForNewType = null;
+        } else {
+            groupForNewType = ListGroup.getSelectionModel().getSelectedItem().getValue();
         }
-        else {
-            groupForNewType=ListGroup.getSelectionModel().getSelectedItem().getValue();
-        }
-        controller.init(TypeOfStorageItem,groupForNewType, isProducts);
+        controller.init(TypeOfStorageItem, groupForNewType, isProducts);
         stage.setResizable(false);
         stage.show();
     }
@@ -279,7 +289,7 @@ public class ProductListController {
         updateTable();
     }
 
-    private void expandAllItems(TreeItem<GroupItems> item){
+    private void expandAllItems(TreeItem<GroupItems> item) {
         item.setExpanded(true);
         for (TreeItem<GroupItems> child : item.getChildren()) {
             expandAllItems(child);
@@ -288,13 +298,13 @@ public class ProductListController {
 
     private void updateListView() {
         ObservableList<TreeItem<GroupItems>> items;
-        items= ListGroup.getRoot().getChildren();
+        items = ListGroup.getRoot().getChildren();
         items.clear();
         HashMap<Long, TreeItem<GroupItems>> nodeMap = new HashMap<>();
 
         // Строим древовидную структуру
         for (GroupItems groupItems : this.groupItems) {
-            if (groupItems.isProduct()!=isProducts) continue;
+            if (groupItems.isProduct() != isProducts) continue;
 
             TreeItem<GroupItems> item = new TreeItem<>(groupItems);
             nodeMap.put(groupItems.getID(), item);
@@ -317,8 +327,8 @@ public class ProductListController {
     public void updateTable() {
 
         ObservableList<TypeOfStorageItem> items = FXCollections.observableArrayList();
-        TreeItem<GroupItems> item=ListGroup.getSelectionModel().getSelectedItem();
-        if (item==ListGroup.getRoot() || item==null) {
+        TreeItem<GroupItems> item = ListGroup.getSelectionModel().getSelectedItem();
+        if (item == ListGroup.getRoot() || item == null) {
             for (TypeOfStorageItem product : TypeOfStorageItem) {
                 if (product.isActive() && product.isProduct() == isProducts) {
                     items.add(product);

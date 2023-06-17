@@ -129,7 +129,7 @@
             <Insets bottom="5.0" />
          </HBox.margin>
       </Button>
-        <Button text="Печать" HBox.hgrow="ALWAYS">
+        <Button onAction="#toExcel" text="Печать" HBox.hgrow="ALWAYS">
             <HBox.margin>
                 <Insets bottom="5.0" right="5.0" />
             </HBox.margin></Button>

@@ -6,8 +6,11 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.scene.control.*;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -26,15 +29,15 @@ public class cellViewController {
     private ArrayList<Cell> cells;
     private ObservableList<Cell> items;
 
-    public void init(ArrayList<WarehouseZone> zones, Tab tab){
-        this.zones=zones;
+    public void init(ArrayList<WarehouseZone> zones, Tab tab) {
+        this.zones = zones;
         tab.selectedProperty().addListener((tabSelected, wasSelected, isSelected) -> {
             if (isSelected) {
                 refresh();
             }
         });
-        items=FXCollections.observableArrayList();
-        cells=new ArrayList<>();
+        items = FXCollections.observableArrayList();
+        cells = new ArrayList<>();
         ComboBoxForFilter.getSelectionModel().selectFirst();
         idClmn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getID()));
         nameClmn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
@@ -43,7 +46,8 @@ public class cellViewController {
         maxWeightClmn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getMaxWeight()));
         doFilter();
     }
-    public void refresh(){
+
+    public void refresh() {
         HashSet<WarehouseZone> uniqueZone = new HashSet<>();
         for (WarehouseZone zone : zones) {
             if (zone.isActive()) uniqueZone.add(zone);
@@ -64,22 +68,40 @@ public class cellViewController {
         doFilter();
     }
 
-    public void doFilter(){
+    public void doFilter() {
         items.clear();
-        if (!checkBoxForFilter.isSelected()){
+        if (!checkBoxForFilter.isSelected()) {
             for (int i = 0; i < cells.size(); i++) {
                 if (cells.get(i).isActive()) items.add(cells.get(i));
             }
-        }
-        else {
-            ObservableList<Cell> temp= FXCollections.observableArrayList();
-            temp.addAll(cells.stream().filter(e -> e.getZone()==ComboBoxForFilter.getValue() && e.isActive()).toList());
+        } else {
+            ObservableList<Cell> temp = FXCollections.observableArrayList();
+            temp.addAll(cells.stream().filter(e -> e.getZone() == ComboBoxForFilter.getValue() && e.isActive()).toList());
             items.addAll(temp);
         }
 
         table.setItems(items);
         table.refresh();
     }
-    public void toFirst(){table.getSelectionModel().selectFirst();}
-    public void toLast(){table.getSelectionModel().selectLast();}
+
+    public void toFirst() {
+        table.getSelectionModel().selectFirst();
+    }
+
+    public void toLast() {
+        table.getSelectionModel().selectLast();
+    }
+
+    public void toExcel(ActionEvent actionEvent) {
+        if (table.getItems() == null) return;
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить в Excel файл");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel файлы", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(table.getScene().getWindow());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+            ExcelConverter.convertToExcel(table, filePath);
+        }
+    }
 }

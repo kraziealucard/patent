@@ -14,17 +14,14 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
-import javafx.stage.WindowEvent;
+import javafx.stage.*;
 import javafx.util.Callback;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
 public class ZoneViewController {
-
     public TableColumn<WarehouseZone, Long> idClmn;
     public TableColumn<WarehouseZone, String> nameClmn;
     public TableColumn<WarehouseZone, String> forProductClmn;
@@ -37,19 +34,19 @@ public class ZoneViewController {
     private ObservableList<WarehouseZone> items;
     private TabPane tabPane;
 
-    public void init(ArrayList<WarehouseZone> zones,TabPane tabPane){
-        this.zones=zones;
-        this.tabPane=tabPane;
+    public void init(ArrayList<WarehouseZone> zones, TabPane tabPane) {
+        this.zones = zones;
+        this.tabPane = tabPane;
         configureUI();
     }
 
-    private void configureUI(){
+    private void configureUI() {
         configureClmn();
         configureTable();
     }
 
     @FXML
-    private void updateItems(){
+    private void updateItems() {
         items = FXCollections.observableArrayList();
         for (WarehouseZone zone : zones) {
             if (zone.isActive()) items.add(zone);
@@ -58,18 +55,18 @@ public class ZoneViewController {
         table.refresh();
     }
 
-    private void configureTable(){
+    private void configureTable() {
         updateItems();
         table.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            deleteBtn.setDisable(newValue==null);
+            deleteBtn.setDisable(newValue == null);
         });
 
     }
 
-    private void configureClmn(){
-        idClmn.setCellValueFactory(cellData-> new SimpleObjectProperty<Long>(cellData.getValue().getID()));
-        maxWeightClmn.setCellValueFactory(cellData-> new SimpleObjectProperty<Double>(cellData.getValue().getMaxWeight()));
+    private void configureClmn() {
+        idClmn.setCellValueFactory(cellData -> new SimpleObjectProperty<Long>(cellData.getValue().getID()));
+        maxWeightClmn.setCellValueFactory(cellData -> new SimpleObjectProperty<Double>(cellData.getValue().getMaxWeight()));
         nameClmn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<WarehouseZone, String>, ObservableValue<String>>() {
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<WarehouseZone, String> param) {
@@ -93,10 +90,10 @@ public class ZoneViewController {
             String yesOrNo = isProductZone ? "Да" : "Нет";
             return new SimpleStringProperty(yesOrNo);
         });
-        numberOfCells.setCellValueFactory(cellData-> new SimpleObjectProperty<Integer>(cellData.getValue().getCells().length * cellData.getValue().getCells()[0].length));
+        numberOfCells.setCellValueFactory(cellData -> new SimpleObjectProperty<Integer>(cellData.getValue().getCells().length * cellData.getValue().getCells()[0].length));
     }
 
-    public void addZone(){
+    public void addZone() {
         for (Window window : Window.getWindows()) {
             if (window instanceof Stage) {
                 Stage stage = (Stage) window;
@@ -123,41 +120,54 @@ public class ZoneViewController {
                 updateItems();
             }
         });
-        createWarehouseZoneController controller=fxmlLoader.getController();
+        createWarehouseZoneController controller = fxmlLoader.getController();
         controller.init(zones);
         stage.setResizable(false);
         stage.show();
     }
 
 
-    public void deleteZones(){
+    public void deleteZones() {
         table.getSelectionModel().getSelectedItem().setActive(false);
         table.getItems().remove(table.getSelectionModel().getSelectedItem());
     }
 
-    public void toFirst(){
+    public void toFirst() {
         table.getSelectionModel().selectFirst();
     }
 
-    public void toLast(){
+    public void toLast() {
         table.getSelectionModel().selectLast();
     }
 
     public void toCell(ActionEvent actionEvent) throws IOException {
         for (int i = 0; i < tabPane.getTabs().size(); i++) {
-            if (tabPane.getTabs().get(i).getText().equals("Ячейки зон")){
+            if (tabPane.getTabs().get(i).getText().equals("Ячейки зон")) {
                 tabPane.getSelectionModel().select(i);
                 return;
             }
         }
-        Tab tab=new Tab("Ячейки зон");
+        Tab tab = new Tab("Ячейки зон");
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("cell-view.fxml"));
         Parent root = fxmlLoader.load();
         tab.setContent(root);
 
-        cellViewController productListController=fxmlLoader.getController();
-        productListController.init(zones,tab);
+        cellViewController productListController = fxmlLoader.getController();
+        productListController.init(zones, tab);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
+    }
+
+    public void toExcel(ActionEvent actionEvent) {
+        if (table.getItems() == null) return;
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить в Excel файл");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel файлы", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(table.getScene().getWindow());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+            ExcelConverter.convertToExcel(table, filePath);
+        }
     }
 }

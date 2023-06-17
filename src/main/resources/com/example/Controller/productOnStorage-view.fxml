@@ -4,83 +4,84 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<GridPane minHeight="471.0" minWidth="479.2" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.Controller.ProductOnStorageController">
+<GridPane minHeight="471.0" minWidth="479.2" prefHeight="471.0" prefWidth="946.0"
+          xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"
+          fx:controller="com.example.Controller.ProductOnStorageController">
     <columnConstraints>
-        <ColumnConstraints hgrow="ALWAYS" />
-        <ColumnConstraints />
+        <ColumnConstraints hgrow="ALWAYS"/>
+        <ColumnConstraints/>
     </columnConstraints>
     <rowConstraints>
-        <RowConstraints />
-        <RowConstraints vgrow="ALWAYS" />
-        <RowConstraints />
+        <RowConstraints/>
+        <RowConstraints vgrow="ALWAYS"/>
+        <RowConstraints/>
     </rowConstraints>
     <HBox alignment="CENTER_LEFT" spacing="15.0">
-        <children>
-            <Label fx:id="labelStorage" text="Продукт: " />
-            <TextField fx:id="searchTextField" onAction="#filter" promptText="Поиск..." HBox.hgrow="ALWAYS">
-                <HBox.margin>
-                    <Insets right="5.0" />
-                </HBox.margin>
-            </TextField>
-        </children>
         <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
         </padding>
+        <Label fx:id="labelStorage" text="Продукт: "/>
+        <TextField fx:id="searchTextField" onAction="#filter" promptText="Поиск..." HBox.hgrow="ALWAYS">
+            <HBox.margin>
+                <Insets right="5.0"/>
+            </HBox.margin>
+        </TextField>
     </HBox>
 
-    <TableView fx:id="table" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+    <TableView fx:id="table" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1"
+               GridPane.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="idColumn" editable="false" text="ID" />
-            <TableColumn fx:id="nameColumn" editable="false" text="Название" />
-            <TableColumn fx:id="groupColumn" editable="false" text="Группа" />
-            <TableColumn fx:id="supplierColumn" editable="false" text="Поставщик" />
-            <TableColumn fx:id="amountOnWarehouseColumn" prefWidth="75.0" text="Кол-во на складе" />
-            <TableColumn fx:id="zoneColumn" minWidth="-1.0" prefWidth="-1.0" text="Зона" />
-            <TableColumn fx:id="amountOnZoneColumn" prefWidth="75.0" text="Кол-во в зоне" />
-            <TableColumn fx:id="cellColumn" editable="false" minWidth="-1.0" prefWidth="-1.0" text="Ячейка" />
-            <TableColumn fx:id="amountOnCellColumn" editable="false" prefWidth="75.0" text="Кол-во в ячейке" />
+            <TableColumn fx:id="idColumn" editable="false" text="ID"/>
+            <TableColumn fx:id="nameColumn" editable="false" text="Название"/>
+            <TableColumn fx:id="groupColumn" editable="false" text="Группа"/>
+            <TableColumn fx:id="supplierColumn" editable="false" text="Поставщик"/>
+            <TableColumn fx:id="amountOnWarehouseColumn" prefWidth="75.0" text="Кол-во на складе"/>
+            <TableColumn fx:id="zoneColumn" minWidth="-1.0" prefWidth="-1.0" text="Зона"/>
+            <TableColumn fx:id="amountOnZoneColumn" prefWidth="75.0" text="Кол-во в зоне"/>
+            <TableColumn fx:id="cellColumn" editable="false" minWidth="-1.0" prefWidth="-1.0" text="Ячейка"/>
+            <TableColumn fx:id="amountOnCellColumn" editable="false" prefWidth="75.0" text="Кол-во в ячейке"/>
         </columns>
         <columnResizePolicy>
-            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
         </columnResizePolicy>
     </TableView>
 
     <HBox alignment="CENTER_LEFT" spacing="10" GridPane.columnIndex="0" GridPane.rowIndex="2">
         <Button onAction="#toFirst" text="К первому">
             <HBox.margin>
-                <Insets />
+                <Insets/>
             </HBox.margin>
         </Button>
         <Button onAction="#toLast" text="К последнему">
             <HBox.margin>
-                <Insets />
+                <Insets/>
             </HBox.margin>
         </Button>
-        <Button text="Печать">
+        <Button onAction="#toExcel" text="Печать">
             <HBox.margin>
-                <Insets right="5.0" />
+                <Insets right="5.0"/>
             </HBox.margin>
         </Button>
-        <Separator orientation="VERTICAL" />
+        <Separator orientation="VERTICAL"/>
         <CheckBox fx:id="groupFilterCheckBox" mnemonicParsing="false" onAction="#filter" text="Группа: ">
             <opaqueInsets>
-                <Insets />
+                <Insets/>
             </opaqueInsets>
             <HBox.margin>
-                <Insets />
+                <Insets/>
             </HBox.margin>
         </CheckBox>
         <ComboBox fx:id="groupFilterComboBox" onAction="#filter" prefWidth="150.0">
             <HBox.margin>
-                <Insets />
+                <Insets/>
             </HBox.margin>
         </ComboBox>
-        <Separator orientation="VERTICAL" />
-        <CheckBox fx:id="zoneFilterCheckBox" mnemonicParsing="false" onAction="#filter" text="Зона:" />
-        <ComboBox fx:id="zoneFilterComboBox" onAction="#filter" prefWidth="150.0" />
-        <Button mnemonicParsing="false" onAction="#toExplain" text="Провести" />
+        <Separator orientation="VERTICAL"/>
+        <CheckBox fx:id="zoneFilterCheckBox" mnemonicParsing="false" onAction="#filter" text="Зона:"/>
+        <ComboBox fx:id="zoneFilterComboBox" onAction="#filter" prefWidth="150.0"/>
+        <Button fx:id="explainBtn" mnemonicParsing="false" onAction="#toExplain" text="Провести"/>
         <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
         </padding>
     </HBox>
 

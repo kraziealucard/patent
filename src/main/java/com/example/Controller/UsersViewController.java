@@ -3,6 +3,7 @@ package com.example.Controller;
 import DAO.DAOFactory;
 import Model.Position;
 import Model.User;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -13,15 +14,18 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.SubScene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
+import javafx.scene.input.MouseButton;
+import javafx.stage.*;
+import javafx.util.Callback;
 import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -37,15 +41,17 @@ public class UsersViewController {
     public CheckBox CheckBoxFilter;
     public ComboBox<Position> ComboBoxFilter;
     public TextField searchTF;
-    private ArrayList<User> users;
     private ArrayList<Position> positions;
+    private ArrayList<User> users;
     User currentUser;
     DAOFactory dao;
     ObservableList<User> data;
 
-    public void init(DAOFactory dao, Tab tab, ArrayList<User> userList, ArrayList<Position> positions, User currentUser) {
+    public void init(ArrayList<User> users, ArrayList<Position> positions, Tab tab, User currentUser) {
         this.currentUser = currentUser;
-        this.dao = dao;
+        //this.dao = dao;
+        this.positions = positions;
+        this.users = users;
 
         ComboBoxFilter.setItems(FXCollections.observableArrayList(positions));
         idColumn.setEditable(false);
@@ -53,18 +59,17 @@ public class UsersViewController {
         setCellValueFactory();
         configColumns();
 
-        users = userList;
         data = FXCollections.observableArrayList();
         userTable.setItems(data);
         toFilter();
 
         tab.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) {
+                //updatePositions();
                 toFilter();
             }
         });
 
-        this.positions = positions;
         userTable.refresh();
     }
 
@@ -92,26 +97,47 @@ public class UsersViewController {
             {
                 checkBox.setOnAction(event -> {
                     commitEdit(checkBox.isSelected());
+                    if (getTableRow() != null) {
+                        TableView<User> tableView = getTableView();
+                        User user = tableView.getItems().get(getTableRow().getIndex());
+                        user.setActive(checkBox.isSelected());
+                        dao.getUserDAO().updateUser(user);
+                    }
                 });
+
             }
 
             @Override
-            public void updateItem(Boolean item, boolean empty) {
+            protected void updateItem(Boolean item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                if (empty || item == null) {
                     setGraphic(null);
                 } else {
                     checkBox.setSelected(item);
                     setGraphic(checkBox);
+                    if (getTableRow() != null) {
+                        TableView<User> tableView = getTableView();
+                        User user = tableView.getItems().get(getTableRow().getIndex());
+                        checkBox.setDisable(user.getID() == 1 || Objects.equals(user.getID(), currentUser.getID()));
+                    }
                 }
             }
-        });
 
-        activeColumn.setOnEditCommit(event -> {
-            User user = event.getTableView().getItems().get(event.getTablePosition().getRow());
-            if (user == currentUser || user == null) return;
-            user.setActive(event.getNewValue());
-            dao.getUserDAO().updateUser(user);
+            @Override
+            public void startEdit() {
+                super.startEdit();
+                if (isEmpty()) {
+                    return;
+                }
+                checkBox.setDisable(false);
+                checkBox.requestFocus();
+            }
+
+            @Override
+            public void cancelEdit() {
+                super.cancelEdit();
+                checkBox.setDisable(true);
+            }
         });
 
     }
@@ -121,10 +147,7 @@ public class UsersViewController {
         passwordColumn.setOnEditCommit(new EventHandler<TableColumn.CellEditEvent<User, String>>() {
             @Override
             public void handle(TableColumn.CellEditEvent<User, String> user) {
-                if (user.getTableView().getSelectionModel().getSelectedItem() == null || Objects.equals(user.getNewValue(), ""))
-                    user.getTableView().refresh();
-                else if (user.getNewValue().length() < 8) {
-                    showShortPasswordErrorDialog();
+                if (user.getTableView().getSelectionModel().getSelectedItem() == null || Objects.equals(user.getNewValue(), "")) {
                     user.getTableView().refresh();
                 } else {
                     user.getTableView().getSelectionModel().getSelectedItem().setPassword(user.getNewValue());
@@ -258,12 +281,20 @@ public class UsersViewController {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        BooleanProperty isSuccess = new SimpleBooleanProperty(false);
         Stage stage = new Stage(StageStyle.DECORATED);
         stage.setTitle("Добавление пользователя");
+
         stage.setScene(scene);
+        stage.setOnHidden(event -> {
+            showNotification();
+        });
         createUserController controller = fxmlLoader.getController();
-        controller.init(dao);
+        controller.init(dao, isSuccess);
         stage.show();
+
+
     }
 
     public void toSearch() {
@@ -278,9 +309,9 @@ public class UsersViewController {
         userTable.setItems(temp);
     }
 
-    public void showNotification(String nameUser) {
+    public void showNotification() {
         Notifications notifications = Notifications.create()
-                .text("Пользователь \"" + nameUser + "\" успешно добавлен")
+                .text("Пользователь успешно добавлен")
                 .position(Pos.BOTTOM_LEFT) // позиция уведомления
                 .hideAfter(Duration.seconds(5)) // скрытие уведомления через 5 секунд
                 .owner(userTable.getScene().getWindow()); // задание окна, на котором будет отображаться уведомление
@@ -305,5 +336,18 @@ public class UsersViewController {
         }
         userTable.refresh();
         userTable.getSelectionModel().selectFirst();
+    }
+
+    public void toExcel(ActionEvent actionEvent) {
+        if (userTable.getItems() == null) return;
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить в Excel файл");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel файлы", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(userTable.getScene().getWindow());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+            ExcelConverter.convertToExcel(userTable, filePath);
+        }
     }
 }

@@ -7,8 +7,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.control.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,7 @@ public class ProductOnStorageController {
     public CheckBox zoneFilterCheckBox;
     public ComboBox<WarehouseZone> zoneFilterComboBox;
     public TextField searchTextField;
+    public Button explainBtn;
     private ObservableList<GroupItems> groupItemsObservableList;
     private ObservableList<WarehouseZone> zoneObservableList;
     private ObservableList<StorageItem> storageItemObservableList;
@@ -40,6 +43,8 @@ public class ProductOnStorageController {
     public void init(ArrayList<WarehouseZone> zones, boolean isProduct) {
         this.isProduct = isProduct;
         this.zones = zones;
+
+        explainBtn.setVisible(false);
 
         groupItemsObservableList = FXCollections.observableArrayList();
         groupFilterComboBox.setItems(groupItemsObservableList);
@@ -221,6 +226,19 @@ public class ProductOnStorageController {
                 }
                 return true;
             });
+        }
+    }
+
+    public void toExcel(ActionEvent actionEvent) {
+        if (table.getItems() == null) return;
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить в Excel файл");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel файлы", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(table.getScene().getWindow());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+            ExcelConverter.convertToExcel(table, filePath);
         }
     }
 }

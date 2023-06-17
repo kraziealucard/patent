@@ -3,14 +3,13 @@ package com.example.Controller;
 import DAO.DAOFactory;
 import Model.Position;
 import Model.User;
+import javafx.beans.property.BooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-
-import java.util.ArrayList;
 
 public class createUserController {
     public TextField nameTextField;
@@ -20,19 +19,29 @@ public class createUserController {
     public Button saveButton;
     public Label labelNameWindow;
     public GridPane root;
-    private ArrayList<Position> positions;
     private DAOFactory dao;
+    private BooleanProperty isSuccess;
+    private String nameNewUser;
 
-    public void init(DAOFactory dao) {
+    public void init(DAOFactory dao, BooleanProperty isSuccess) {
         this.dao = dao;
+        this.isSuccess = isSuccess;
+        this.nameNewUser = nameNewUser;
         updatePositions();
         labelNameWindow.setText("Создание новой записи");
-        positionComboBox.setItems(FXCollections.observableArrayList(positions));
-        positionComboBox.getSelectionModel().selectFirst();
+        /*stage.focusedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                if (newValue) {
+                    updatePositions();
+                }
+            }
+        });*/
     }
 
     private void updatePositions() {
-        this.positions = dao.getPositionDAO().getPositionList(true);
+        positionComboBox.setItems(FXCollections.observableArrayList(dao.getPositionDAO().getPositionList(true)));
+        positionComboBox.getSelectionModel().selectFirst();
     }
 
     private boolean areAllTextFieldsFilled() {
@@ -58,6 +67,19 @@ public class createUserController {
             return;
         }
 
-        ((Stage) nameTextField.getScene().getWindow()).close();
+        if (dao.getUserDAO().loginUserExists(loginTextField.getText())) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Логин недоступен");
+            alert.setContentText("Пожалуйста, введите другой логин.");
+
+            alert.showAndWait();
+            return;
+        }
+
+        dao.getUserDAO().addUser(new User(-1L, nameTextField.getText(), positionComboBox.getValue(), loginTextField.getText(), passwordTextField.getText()));
+        isSuccess.setValue(true);
+        nameNewUser = loginTextField.getText();
+        ((Stage) labelNameWindow.getScene().getWindow()).close();
     }
 }

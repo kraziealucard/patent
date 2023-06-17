@@ -4,13 +4,14 @@ public class GroupItems {
     long ID;
     String name;
     GroupItems parent;
-
     boolean isProduct;
+    boolean isActive;
 
     public GroupItems(long ID, String name, boolean isProduct) {
         this.ID = ID;
         this.name = name;
-        this.isProduct=isProduct;
+        this.isProduct = isProduct;
+        this.isActive = true;
     }
 
     public long getID() {
@@ -43,6 +44,14 @@ public class GroupItems {
 
     public void setProduct(boolean product) {
         isProduct = product;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 
     @Override

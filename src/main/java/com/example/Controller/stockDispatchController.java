@@ -13,15 +13,13 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
-import javafx.stage.WindowEvent;
+import javafx.stage.*;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.Notifications;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -44,6 +42,7 @@ public class stockDispatchController {
     public TableColumn<ReceiptDispatch.ListOfReceipt, Integer> amountOnCellColumn;
     public TableColumn<ReceiptDispatch.ListOfReceipt, Integer> amountColumn;
     public TableColumn<ReceiptDispatch.ListOfReceipt, Integer> availableAmountColumn;
+    public Button ExcelBtn;
     private ArrayList<WarehouseZone> warehouseZones;
     private ArrayList<TypeOfStorageItem> typeOfStorageItems;
     private ArrayList<ReceiptDispatch> receipts;
@@ -68,11 +67,13 @@ public class stockDispatchController {
         this.users = users;
         this.customers = customers;
 
+        ExcelBtn.setVisible(false);
+
         typeOfStorageItemObservableList = FXCollections.observableArrayList();
         customerObservableList = FXCollections.observableArrayList();
         userObservableList = FXCollections.observableArrayList();
 
-        currentReceipt = new ReceiptDispatch(-1, LocalDate.now(), author, "", null,isProduct);
+        currentReceipt = new ReceiptDispatch(-1, LocalDate.now(), author, "", null, isProduct);
         configureUI();
     }
 
@@ -205,7 +206,8 @@ public class stockDispatchController {
                 @Override
                 protected void updateItem(TypeOfStorageItem item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (this.getTableRow()!=null &&  this.getTableRow()!=null && this.getTableRow().getItem() != null) getStyleClass().add("table-cell-editable");
+                    if (this.getTableRow() != null && this.getTableRow() != null && this.getTableRow().getItem() != null)
+                        getStyleClass().add("table-cell-editable");
                     if (!empty) {
                         setText(item.toString());
                         setOnMouseClicked(event -> {
@@ -547,7 +549,7 @@ public class stockDispatchController {
             disableUI();
             removeItemsFromCell();
             ReceiptDispatch temp = new ReceiptDispatch(receipts.size() + 1, datePicker.getValue(), performerComboBox.getValue(),
-                    invoiceNumberTextField.getText(), customersComboBox.getValue(),isProduct);
+                    invoiceNumberTextField.getText(), customersComboBox.getValue(), isProduct);
             temp.setLists(currentReceipt.getLists());
             receipts.add(temp);
             idTextField.setText(String.valueOf(receipts.size()));
@@ -557,6 +559,7 @@ public class stockDispatchController {
                     .hideAfter(Duration.seconds(3))
                     .owner(table.getScene().getWindow());
             notifications.show();
+            ExcelBtn.setVisible(true);
         }
     }
 
@@ -639,5 +642,19 @@ public class stockDispatchController {
             }
         }
         return true;
+    }
+
+    public void toExcel(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить в Excel файл");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel файлы", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(table.getScene().getWindow());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+
+            ExcelConverter.convertToExcelForDispatch(table, filePath, datePicker.getValue(),
+                    customersComboBox.getValue().getName(), invoiceNumberTextField.getText(), performerComboBox.getValue().getName());
+        }
     }
 }

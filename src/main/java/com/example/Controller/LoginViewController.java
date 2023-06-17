@@ -7,6 +7,7 @@ import Model.User;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -26,13 +27,18 @@ public class LoginViewController {
     }
 
     public void Action_btnSigIn(ActionEvent actionEvent) {
-        if (Objects.equals(TFLogin.getText(), "admin") && Objects.equals(TFLogin.getText(), "admin")) {
-            ArrayList<Permission> permissions = new ArrayList<>(Arrays.stream(Permission.values()).toList());
-            Position position = new Position(-1, "Админнистратор", permissions);
-            currentUser = new User(1L, "Админнистратор", position, "****************", "***************");
-            enterToProgram();
-            TFLogin.getScene().getWindow().hide();
+        User user = dao.getUserDAO().getUserByLoginAndPassword(TFLogin.getText(), TFPassword.getText(), dao.getPositionDAO().getPositionList(false));
+        if (user == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Пользователь не найден");
+            alert.setContentText("Пользователь с указанным логином и паролем не найден.");
+            alert.showAndWait();
+            return;
         }
+        currentUser = user;
+        enterToProgram();
+        TFLogin.getScene().getWindow().hide();
     }
 
     private void enterToProgram() {

@@ -6,7 +6,6 @@ public class WarehouseZone {
     private Cell[][] cells;
     private boolean isActive;
     private boolean isProductZone;
-
     private Double maxWeight;
 
     public WarehouseZone(long ID, String zoneName, int length, int width, boolean isProductZone, double maxWeight) {
@@ -69,6 +68,10 @@ public class WarehouseZone {
 
     public void setProductZone(boolean productZone) {
         isProductZone = productZone;
+    }
+
+    public void setMaxWeight(Double maxWeight) {
+        this.maxWeight = maxWeight;
     }
 
     @Override

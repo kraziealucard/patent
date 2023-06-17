@@ -14,15 +14,13 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
-import javafx.stage.WindowEvent;
+import javafx.stage.*;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.Notifications;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -45,6 +43,7 @@ public class stockReplenishmentController {
     public Button addButton;
     public Button removeButton;
     public Button finishButton;
+    public Button toExcelBtn;
     private ArrayList<ReceiptSupply> receipts;
     private ArrayList<TypeOfStorageItem> typeOfStorageItems;
     private ArrayList<WarehouseZone> zones;
@@ -59,16 +58,17 @@ public class stockReplenishmentController {
     private ArrayList<GroupItems> groups;
 
     public void init(ArrayList<ReceiptSupply> receipts, ArrayList<TypeOfStorageItem> items, ArrayList<WarehouseZone> zones,
-                     ArrayList<Supplier> suppliers, ArrayList<User> users, User author,ArrayList<GroupItems> groups, boolean isProduct) {
+                     ArrayList<Supplier> suppliers, ArrayList<User> users, User author, ArrayList<GroupItems> groups, boolean isProduct) {
         this.receipts = receipts;
         this.typeOfStorageItems = items;
         this.zones = zones;
         this.suppliers = suppliers;
-        this.users = users;
         this.author = author;
         this.isProduct = isProduct;
-        this.groups=groups;
+        this.groups = groups;
+        this.users = users;
         this.datePicker.setValue(LocalDate.now());
+        toExcelBtn.setVisible(false);
 
         availableWeightClmn.setVisible(true);
 
@@ -96,7 +96,7 @@ public class stockReplenishmentController {
         idTextField.setText(String.valueOf(receiptSupply.getID()));
         invoiceNumberTextField.setText(receiptSupply.getInvoiceNumberField());
 
-        zones=new ArrayList<>();
+        zones = new ArrayList<>();
 
         configureTable();
         disableUI();
@@ -168,7 +168,8 @@ public class stockReplenishmentController {
                 @Override
                 protected void updateItem(TypeOfStorageItem item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (this.getTableRow()!=null && this.getTableRow().getItem() != null) getStyleClass().add("table-cell-editable");
+                    if (this.getTableRow() != null && this.getTableRow().getItem() != null)
+                        getStyleClass().add("table-cell-editable");
                     if (!empty) {
                         setText(item.toString());
                         setOnMouseClicked(event -> {
@@ -195,7 +196,8 @@ public class stockReplenishmentController {
                 @Override
                 protected void updateItem(Integer item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (this.getTableRow()!=null && this.getTableRow().getItem() != null) getStyleClass().add("table-cell-editable");
+                    if (this.getTableRow() != null && this.getTableRow().getItem() != null)
+                        getStyleClass().add("table-cell-editable");
                     if (empty) {
                         setGraphic(null);
                         setText(null);
@@ -462,7 +464,7 @@ public class stockReplenishmentController {
         if (isFieldsAreFilled() && isTableAreFilled() && isColumnValuesNonNegative() && addItemsIntoCell()) {
             disableUI();
             ReceiptSupply temp = new ReceiptSupply(receipts.size() + 1, datePicker.getValue(), performerComboBox.getValue(),
-                    (invoiceNumberTextField.getText()), suppliersComboBox.getValue(),isProduct);
+                    (invoiceNumberTextField.getText()), suppliersComboBox.getValue(), isProduct);
             temp.setLists(currentReceipt.getLists());
             receipts.add(temp);
             idTextField.setText(String.valueOf(receipts.size()));
@@ -472,6 +474,7 @@ public class stockReplenishmentController {
                     .hideAfter(Duration.seconds(3))
                     .owner(table.getScene().getWindow());
             notifications.show();
+            toExcelBtn.setVisible(true);
         }
     }
 
@@ -497,7 +500,7 @@ public class stockReplenishmentController {
         stage.setScene(scene);
 
         ProductListController productListController = fxmlLoader.getController();
-        productListController.init(typeOfStorageItems, groups,isProduct);
+        productListController.init(typeOfStorageItems, groups, isProduct);
         stage.setResizable(false);
         if (itemForChange == null) {
             stage.setOnHidden(new EventHandler<WindowEvent>() {
@@ -565,4 +568,17 @@ public class stockReplenishmentController {
         updateTable();
     }
 
+    public void toExcel(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить в Excel файл");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel файлы", "*.xlsx"));
+        File file = fileChooser.showSaveDialog(table.getScene().getWindow());
+
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+
+            ExcelConverter.convertToExcelForSupply(table, filePath, datePicker.getValue(),
+                    suppliersComboBox.getValue().getName(), invoiceNumberTextField.getText(), performerComboBox.getValue().getName());
+        }
+    }
 }

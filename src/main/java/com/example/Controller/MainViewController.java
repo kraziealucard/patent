@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class MainViewController {
-    public Label LabelNameUser;
     public TabPane tabPane;
     public Button UserBtn;
     public Button PositionBtn;
@@ -22,7 +21,6 @@ public class MainViewController {
     public Button ProductListBtn;
     public Button MaterialListBtn;
     public VBox catalogsVbox;
-    public Button myCompanyBtn;
     public Button productOnStorageBtn;
     public Button materialOnStorageBtn;
     public VBox recordsVbox;
@@ -50,16 +48,17 @@ public class MainViewController {
 
     public void init(DAOFactory dao, User user) {
         this.dao = dao;
-        loadPositions();
+        currentUser = user;
+
         loadGroupList();
         loadCustomersAndSuppliers();
+        loadPositions();
         loadUsers();
         loadStorageItemList();
         loadZones();
         loadReceiptsSupplies();
         loadReceiptsDispatches();
         loadReceiptsMovements();
-        currentUser = user;
 
         settingAccess();
         recordMenuClick();
@@ -131,16 +130,13 @@ public class MainViewController {
                     bookBtn.setVisible(true);
                 }
             }
-
-            productOnStorageBtn.setManaged(true);
-            productOnStorageBtn.setVisible(true);
-
-            materialOnStorageBtn.setManaged(true);
-            materialOnStorageBtn.setVisible(true);
-
-            myCompanyBtn.setManaged(true);
-            myCompanyBtn.setVisible(true);
         }
+
+        productOnStorageBtn.setManaged(true);
+        productOnStorageBtn.setVisible(true);
+
+        materialOnStorageBtn.setManaged(true);
+        materialOnStorageBtn.setVisible(true);
 
     }
 
@@ -169,10 +165,12 @@ public class MainViewController {
 
     private void loadStorageItemList() {
         typeOfStorageItemList = new ArrayList<>();
-        TypeOfStorageItem temp = new TypeOfStorageItem(1, "Товар", 20, true);
-        TypeOfStorageItem tampM = new TypeOfStorageItem(2, "Материал", 20, false);
+        TypeOfStorageItem temp = new TypeOfStorageItem(1, "Canon PIXMA MG4240 (6224B007)", 0.5, true);
+        TypeOfStorageItem tampM = new TypeOfStorageItem(2, "Клавиатура BTC 5211A Black (ps/2)", 0.25, true);
+        TypeOfStorageItem tampc = new TypeOfStorageItem(2, "LCD Asus VS247H Glossy-Black", 0.5, true);
         typeOfStorageItemList.add(temp);
         typeOfStorageItemList.add(tampM);
+        typeOfStorageItemList.add(tampc);
     }
 
     private void loadPositions() {
@@ -207,7 +205,7 @@ public class MainViewController {
         tab.setContent(root);
 
         UsersViewController usersViewController = fxmlLoader.getController();
-        usersViewController.init(dao, tab, userList, positionList, currentUser);
+        usersViewController.init(userList, positionList, tab, currentUser);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -225,7 +223,7 @@ public class MainViewController {
         tab.setContent(root);
 
         PositionViewController positionViewController = fxmlLoader.getController();
-        positionViewController.init(dao, tab, positionList);
+        positionViewController.init(positionList, tab);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
