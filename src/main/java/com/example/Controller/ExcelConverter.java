@@ -29,7 +29,9 @@ public class ExcelConverter {
                     Object item = items.get(i);
                     Row row = sheet.createRow(i + 1);
                     for (int j = 0; j < tableView.getColumns().size(); j++) {
-                        row.createCell(j).setCellValue(tableView.getColumns().get(j).getCellData(i).toString());
+                        if (tableView.getColumns().get(j).getCellData(i) == null) row.createCell(j).setCellValue("");
+
+                        else row.createCell(j).setCellValue(tableView.getColumns().get(j).getCellData(i).toString());
                     }
                 }
 
@@ -129,7 +131,7 @@ public class ExcelConverter {
 
             Row infoRow4 = sheet.createRow(3);
             Cell infoCell7 = infoRow4.createCell(0);
-            infoCell7.setCellValue("Ответственный за приемку:");
+            infoCell7.setCellValue("Ответственный за отгрузку:");
             Cell infoCell8 = infoRow4.createCell(1);
             infoCell8.setCellValue(responsiblePerson);
 
@@ -183,7 +185,7 @@ public class ExcelConverter {
 
             Row infoRow4 = sheet.createRow(2);
             Cell infoCell7 = infoRow4.createCell(0);
-            infoCell7.setCellValue("Ответственный за приемку:");
+            infoCell7.setCellValue("Ответственный за перемещение:");
             Cell infoCell8 = infoRow4.createCell(1);
             infoCell8.setCellValue(responsiblePerson);
 

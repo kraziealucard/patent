@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.*;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -13,11 +14,13 @@ import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class ContractorController {
     public TableView<Contractor> table;
     public TableColumn<Contractor, String> columnName;
     public TableColumn<Contractor, Boolean> columnIsSupplier;
+    public TableColumn<Contractor, Boolean> columnIsCustomer;
     public TableColumn<Contractor, String> columnAddress;
     public TableColumn<Contractor, String> columnInformation;
     public TableColumn<Contractor, String> columnPassport;
@@ -39,14 +42,20 @@ public class ContractorController {
     public CheckBox CheckBoxSelection;
     public ComboBox<String> comboBoxContactorType;
     public VBox boxForFields;
-    private ObservableList<Contractor> data;
-    private ArrayList<Customer> customersBefore;
-    private ArrayList<Supplier> suppliersBefore;
+    private ObservableList<Contractor> ObsContractors;
+    private ArrayList<Contractor> contractors;
+    private DAOFactory dao;
 
-    public void init(ArrayList<Customer> customers, ArrayList<Supplier> suppliers) {
-        this.customersBefore = customers;
-        this.suppliersBefore = suppliers;
+    public void init(DAOFactory dao, Tab tab, ArrayList<Contractor> contractors) {
+        this.dao = dao;
+        this.contractors = contractors;
         configureUI();
+        updateTable();
+        tab.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                updateTable();
+            }
+        });
     }
 
     private void configureUI() {
@@ -57,25 +66,21 @@ public class ContractorController {
 
     private void filteredCustomers() {
         ObservableList<Contractor> temp = FXCollections.observableArrayList();
-        temp.addAll(data.stream().filter(e -> e instanceof Customer).toList());
+        temp.addAll(ObsContractors.stream().filter(Contractor::isCustomer).toList());
         table.setItems(temp);
     }
 
     private void filteredSuppliers() {
         ObservableList<Contractor> temp = FXCollections.observableArrayList();
-        temp.addAll(data.stream().filter(e -> e instanceof Supplier).toList());
+        temp.addAll(ObsContractors.stream().filter(Contractor::isSupplier).toList());
         table.setItems(temp);
     }
 
     private void configureClmn() {
         columnName.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
 
-        columnIsSupplier.setCellValueFactory(cellData -> {
-            Contractor obj = cellData.getValue();
-            boolean isSupplier = obj instanceof Supplier;
-            return new SimpleBooleanProperty(isSupplier);
-        });
-
+        columnIsSupplier.setCellValueFactory(cellData -> new SimpleBooleanProperty(cellData.getValue().isSupplier()));
+        columnIsCustomer.setCellValueFactory(cellData -> new SimpleBooleanProperty(cellData.getValue().isCustomer()));
         columnAddress.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getAddress()));
         columnInformation.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getInformation()));
         columnPassport.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getPassport()));
@@ -91,62 +96,78 @@ public class ContractorController {
                 setText(empty ? null : (item ? "Да" : "Нет"));
             }
         });
+
+        columnIsCustomer.setCellFactory(column -> new TableCell<Contractor, Boolean>() {
+            @Override
+            protected void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : (item ? "Да" : "Нет"));
+            }
+        });
     }
 
     private void configureFields() {
         TFName.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
+            if (!newValue && table.getSelectionModel().getSelectedItem() != null) {
                 if (table.getSelectionModel().getSelectedItem() == null) return;
                 table.getSelectionModel().getSelectedItem().setName(TFName.getText());
+                dao.getContactorDAO().updateContractor(table.getSelectionModel().getSelectedItem());
                 table.refresh();
             }
         });
 
         TFaddress.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
+            if (!newValue && table.getSelectionModel().getSelectedItem() != null) {
                 table.getSelectionModel().getSelectedItem().setAddress(TFaddress.getText());
+                dao.getContactorDAO().updateContractor(table.getSelectionModel().getSelectedItem());
                 table.refresh();
             }
         });
 
         TAInfo.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
+            if (!newValue && table.getSelectionModel().getSelectedItem() != null) {
                 table.getSelectionModel().getSelectedItem().setInformation(TAInfo.getText());
+                dao.getContactorDAO().updateContractor(table.getSelectionModel().getSelectedItem());
                 table.refresh();
             }
         });
 
         TFpassport.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
+            if (!newValue && table.getSelectionModel().getSelectedItem() != null) {
                 table.getSelectionModel().getSelectedItem().setPassport(TFpassport.getText());
+                dao.getContactorDAO().updateContractor(table.getSelectionModel().getSelectedItem());
                 table.refresh();
             }
         });
 
         TFphone.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
+            if (!newValue && table.getSelectionModel().getSelectedItem() != null) {
                 table.getSelectionModel().getSelectedItem().setPhone(TFphone.getText());
+                dao.getContactorDAO().updateContractor(table.getSelectionModel().getSelectedItem());
                 table.refresh();
             }
         });
 
         TFbankRequisites.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
+            if (!newValue && table.getSelectionModel().getSelectedItem() != null) {
                 table.getSelectionModel().getSelectedItem().setBankRequisites(TFbankRequisites.getText());
+                dao.getContactorDAO().updateContractor(table.getSelectionModel().getSelectedItem());
                 table.refresh();
             }
         });
 
         TFinn.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
+            if (!newValue && table.getSelectionModel().getSelectedItem() != null) {
                 table.getSelectionModel().getSelectedItem().setIIN(TFinn.getText());
+                dao.getContactorDAO().updateContractor(table.getSelectionModel().getSelectedItem());
                 table.refresh();
             }
         });
 
         TFkpp.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
+            if (!newValue && table.getSelectionModel().getSelectedItem() != null) {
                 table.getSelectionModel().getSelectedItem().setKPP(TFkpp.getText());
+                dao.getContactorDAO().updateContractor(table.getSelectionModel().getSelectedItem());
                 table.refresh();
             }
         });
@@ -158,18 +179,6 @@ public class ContractorController {
     }
 
     private void configureTable() {
-        data = FXCollections.observableArrayList();
-
-        for (Customer customer : customersBefore) {
-            data.add(customer.clone());
-        }
-
-        for (Supplier supplier : suppliersBefore) {
-            data.add(supplier.clone());
-        }
-
-        table.setItems(data);
-        table.refresh();
 
         table.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -181,11 +190,6 @@ public class ContractorController {
             }
         });
 
-        table.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (oldValue != newValue && newValue) {
-                updateTable();
-            }
-        });
     }
 
     private void disableUIElements(boolean res) {
@@ -213,7 +217,7 @@ public class ContractorController {
 
     private void displaySelectedContractor(Contractor contractor) {
         TFName.setText(contractor.getName());
-        CBisSupplier.setSelected(contractor instanceof Supplier);
+        CBisSupplier.setSelected(contractor.isSupplier());
         TFaddress.setText(contractor.getAddress());
         TAInfo.setText(contractor.getInformation());
         TFpassport.setText(contractor.getPassport());
@@ -225,90 +229,38 @@ public class ContractorController {
 
     public void addContractor(ActionEvent actionEvent) {
         Contractor newContractor;
-        if (!CheckBoxSelection.isSelected()) {
-            newContractor = new Customer(-1, "Новый контрагент");
-            newContractor.setActive(true);
-            data.add(newContractor);
-            table.getSelectionModel().select(newContractor);
-        } else switch (comboBoxContactorType.getValue()) {
-            case "поставщиков" -> {
-                newContractor = new Supplier(-1, "Новый поставщик");
-                newContractor.setActive(true);
-                table.getItems().add(newContractor);
-                table.getSelectionModel().select(newContractor);
-                data.add(newContractor);
-            }
-
-            case "покупателей" -> {
-                newContractor = new Customer(-1, "Новый покупатель");
-                newContractor.setActive(true);
-                table.getItems().add(newContractor);
-                table.getSelectionModel().select(newContractor);
-                data.add(newContractor);
-            }
-            default -> {
-            }
-        }
-
-        table.refresh();
+        newContractor = new Contractor(-1, "Новый контрагент");
+        newContractor.setID(dao.getContactorDAO().addContactor(newContractor));
+        contractors.add(newContractor);
+        updateTable();
     }
 
     public void removeContractor(ActionEvent actionEvent) {
         if (table.getSelectionModel().getSelectedItem() == null) return;
-        table.getSelectionModel().getSelectedItem().setActive(false);
-        data.remove(table.getSelectionModel().getSelectedItem());
+        Contractor currentContractor = table.getSelectionModel().getSelectedItem();
+        currentContractor.setActive(false);
+        dao.getContactorDAO().updateContractor(currentContractor);
         updateTable();
+        table.refresh();
     }
 
-    public void setTypeContractor(ActionEvent actionEvent) {
+    public void setSupplier(ActionEvent actionEvent) {
         if (table.getSelectionModel().getSelectedItem() == null) return;
-        Contractor currentBeforeChange = table.getSelectionModel().getSelectedItem();
-
-        if (CBisSupplier.isSelected()) {
-            Supplier temp = new Supplier(currentBeforeChange.getID(), currentBeforeChange.getName());
-            temp.setAddress(currentBeforeChange.getAddress());
-            temp.setInformation(currentBeforeChange.getInformation());
-            temp.setPassport(currentBeforeChange.getPassport());
-            temp.setPhone(currentBeforeChange.getPhone());
-            temp.setBankRequisites(currentBeforeChange.getBankRequisites());
-            temp.setIIN(currentBeforeChange.getIIN());
-            temp.setKPP(currentBeforeChange.getKPP());
-
-            table.getItems().remove(currentBeforeChange);
-            table.getItems().add(temp);
-            table.getSelectionModel().select(temp);
-
-            if (CheckBoxSelection.isSelected()) {
-                data.remove(currentBeforeChange);
-                data.add(temp);
-            }
-        } else {
-            Customer temp = new Customer(currentBeforeChange.getID(), currentBeforeChange.getName());
-            temp.setAddress(currentBeforeChange.getAddress());
-            temp.setInformation(currentBeforeChange.getInformation());
-            temp.setPassport(currentBeforeChange.getPassport());
-            temp.setPhone(currentBeforeChange.getPhone());
-            temp.setBankRequisites(currentBeforeChange.getBankRequisites());
-            temp.setIIN(currentBeforeChange.getIIN());
-            temp.setKPP(currentBeforeChange.getKPP());
-
-            table.getItems().remove(currentBeforeChange);
-            table.getItems().add(temp);
-            table.getSelectionModel().select(temp);
-
-            if (CheckBoxSelection.isSelected()) {
-                data.remove(currentBeforeChange);
-                data.add(temp);
-            }
-        }
+        Contractor currentContractor = table.getSelectionModel().getSelectedItem();
+        currentContractor.setSupplier(((CheckBox) actionEvent.getSource()).isSelected());
+        dao.getContactorDAO().updateContractor(currentContractor);
+        table.refresh();
     }
 
     @FXML
     private void updateTable() {
+        ObsContractors = contractors.stream()
+                .filter(Contractor::isActive)
+                .collect(Collectors.toCollection(FXCollections::observableArrayList));
 
         table.setItems(null);
         if (!CheckBoxSelection.isSelected()) {
-            table.setItems(data);
+            table.setItems(ObsContractors);
         } else switch (comboBoxContactorType.getSelectionModel().getSelectedItem()) {
             case "поставщиков" -> filteredSuppliers();
             case "покупателей" -> filteredCustomers();
@@ -317,29 +269,6 @@ public class ContractorController {
         }
         table.refresh();
         table.getSelectionModel().selectFirst();
-    }
-
-    public void acceptChanges(ActionEvent actionEvent) {
-        table.requestFocus();
-        customersBefore.clear();
-        suppliersBefore.clear();
-        for (int i = 0; i < data.size(); i++) {
-            if (data.get(i) instanceof Supplier) suppliersBefore.add((Supplier) data.get(i).clone());
-            else customersBefore.add((Customer) data.get(i).clone());
-        }
-    }
-
-    public void cancelChanges(ActionEvent actionEvent) {
-        data.clear();
-
-        for (Customer customer : customersBefore) {
-            data.add(customer.clone());
-        }
-
-        for (Supplier supplier : suppliersBefore) {
-            data.add(supplier.clone());
-        }
-        updateTable();
     }
 
     public void toFirst(ActionEvent actionEvent) {
@@ -391,5 +320,13 @@ public class ContractorController {
             String filePath = file.getAbsolutePath();
             ExcelConverter.convertToExcel(table, filePath);
         }
+    }
+
+    public void setCustomer(ActionEvent actionEvent) {
+        if (table.getSelectionModel().getSelectedItem() == null) return;
+        Contractor currentContractor = table.getSelectionModel().getSelectedItem();
+        currentContractor.setCustomer(((CheckBox) actionEvent.getSource()).isSelected());
+        dao.getContactorDAO().updateContractor(currentContractor);
+        table.refresh();
     }
 }

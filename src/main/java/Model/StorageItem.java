@@ -4,8 +4,8 @@ public class StorageItem {
     long ID;
     private TypeOfStorageItem type;
     private Cell locationOnStorage;
-    private Supplier supplier;
-    private Customer customer;
+    private Contractor supplier;
+    private Contractor customer;
 
     public StorageItem(long ID, TypeOfStorageItem type, Cell locationOnStorage) {
         this.ID = ID;
@@ -37,19 +37,19 @@ public class StorageItem {
         this.locationOnStorage = locationOnStorage;
     }
 
-    public Supplier getSupplier() {
+    public Contractor getSupplier() {
         return supplier;
     }
 
-    public void setSupplier(Supplier supplier) {
+    public void setSupplier(Contractor supplier) {
         this.supplier = supplier;
     }
 
-    public Customer getCustomer() {
+    public Contractor getCustomer() {
         return customer;
     }
 
-    public void setCustomer(Customer customer) {
+    public void setCustomer(Contractor customer) {
         this.customer = customer;
     }
 }

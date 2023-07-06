@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.*;
 import Model.Cell;
 import javafx.beans.property.SimpleObjectProperty;
@@ -20,7 +21,7 @@ public class ProductOnStorageController {
     public TableColumn<StorageItem, Long> idColumn;
     public TableColumn<StorageItem, String> nameColumn;
     public TableColumn<StorageItem, GroupItems> groupColumn;
-    public TableColumn<StorageItem, Supplier> supplierColumn;
+    public TableColumn<StorageItem, Contractor> supplierColumn;
     public TableColumn<StorageItem, WarehouseZone> zoneColumn;
     public TableColumn<StorageItem, Cell> cellColumn;
     public TableColumn<StorageItem, Long> amountOnWarehouseColumn;
@@ -116,7 +117,7 @@ public class ProductOnStorageController {
                                 break;
                             }
                         }
-                        if (isUnique) {
+                        if (isUnique && storageItem.getLocationOnStorage() != null) {
                             storageItemObservableList.add(storageItem);
                         }
                     }
@@ -145,6 +146,7 @@ public class ProductOnStorageController {
         groupFilterComboBox.getSelectionModel().selectFirst();
         if (tempGroupItems != null && groupItemsObservableList.contains(tempGroupItems))
             groupFilterComboBox.getSelectionModel().select(tempGroupItems);
+
     }
 
     private void configureUI() {
@@ -167,7 +169,7 @@ public class ProductOnStorageController {
         long res = table.getItems().stream()
                 .filter(storageItem -> storageItem.getType() == cellData.getValue().getType() &&
                         storageItem.getSupplier() == cellData.getValue().getSupplier())
-                .mapToLong(item -> amountOnZoneColumn.getCellData(item)).sum();
+                .mapToLong(item -> amountOnCellColumn.getCellData(item)).sum();
 
         return res == 0 ? null : res;
     }
@@ -220,7 +222,7 @@ public class ProductOnStorageController {
         if (!searchTextField.getText().isBlank()) {
             table.getItems().removeIf(item -> {
                 for (int j = 0; j < table.getColumns().size(); j++) {
-                    if (table.getColumns().get(j).getCellData(item) != null && Objects.equals(table.getColumns().get(j).getCellData(item).toString(), searchTextField.getText())) {
+                    if (table.getColumns().get(j).getCellData(item) != null && Objects.equals(table.getColumns().get(j).getCellData(item).toString().toLowerCase(), searchTextField.getText().toLowerCase())) {
                         return false;
                     }
                 }

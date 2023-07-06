@@ -10,7 +10,6 @@ import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class MainViewController {
     public TabPane tabPane;
@@ -35,30 +34,22 @@ public class MainViewController {
     public Button catalogMenu;
     private User currentUser;
     private ArrayList<User> userList;
-    private ArrayList<Supplier> supplierList;
-    private ArrayList<Customer> customerList;
+    private ArrayList<Contractor> contractors;
     private ArrayList<Position> positionList;
     private ArrayList<GroupItems> groupItemsList;
     private ArrayList<TypeOfStorageItem> typeOfStorageItemList;
-    private ArrayList<WarehouseZone> zones;
-    private ArrayList<ReceiptSupply> receiptSupplies;
-    private ArrayList<ReceiptDispatch> receiptDispatches;
-    private ArrayList<ReceiptMovement> receiptMovements;
+    private ArrayList<WarehouseZone> zoneList;
+    private ArrayList<ReceiptSupply> receiptSuppliesList;
+    private ArrayList<ReceiptDispatch> receiptDispatchesList;
+    private ArrayList<ReceiptMovement> receiptMovementsList;
+    private ArrayList<StorageItem> storageItemsList;
     private DAOFactory dao;
 
     public void init(DAOFactory dao, User user) {
         this.dao = dao;
         currentUser = user;
 
-        loadGroupList();
-        loadCustomersAndSuppliers();
-        loadPositions();
-        loadUsers();
-        loadStorageItemList();
-        loadZones();
-        loadReceiptsSupplies();
-        loadReceiptsDispatches();
-        loadReceiptsMovements();
+        loadData();
 
         settingAccess();
         recordMenuClick();
@@ -141,55 +132,19 @@ public class MainViewController {
     }
 
 
-    private void loadGroupList() {
-        groupItemsList = new ArrayList<>();
-    }
-
-    private void loadReceiptsMovements() {
-        receiptMovements = new ArrayList<>();
-    }
-
-    private void loadReceiptsDispatches() {
-        receiptDispatches = new ArrayList<>();
-    }
-
-    private void loadReceiptsSupplies() {
-        receiptSupplies = new ArrayList<>();
-    }
-
-    private void loadZones() {
-        zones = new ArrayList<>();
-        zones.add(new WarehouseZone(1, "Товары", 3, 3, true, 50));
-        zones.add(new WarehouseZone(2, "Материалы", 3, 3, false, 50));
-    }
-
-    private void loadStorageItemList() {
-        typeOfStorageItemList = new ArrayList<>();
-        TypeOfStorageItem temp = new TypeOfStorageItem(1, "Canon PIXMA MG4240 (6224B007)", 0.5, true);
-        TypeOfStorageItem tampM = new TypeOfStorageItem(2, "Клавиатура BTC 5211A Black (ps/2)", 0.25, true);
-        TypeOfStorageItem tampc = new TypeOfStorageItem(2, "LCD Asus VS247H Glossy-Black", 0.5, true);
-        typeOfStorageItemList.add(temp);
-        typeOfStorageItemList.add(tampM);
-        typeOfStorageItemList.add(tampc);
-    }
-
-    private void loadPositions() {
+    private void loadData() {
+        groupItemsList = dao.getGroupItemsDAO().getGroupItemsList(false);
+        typeOfStorageItemList = dao.getItemTypesDAO().getTypeList(false, groupItemsList);
         positionList = dao.getPositionDAO().getPositionList(false);
-    }
-
-    private void loadUsers() {
         userList = dao.getUserDAO().getUserList(false, positionList);
+        contractors = dao.getContactorDAO().getContractorsList(false);
+        zoneList = dao.getWarehouseZoneDAO().getWarehouseZones(false);
+        storageItemsList = dao.getStorageItemDAO().getStorageItem(false, typeOfStorageItemList, contractors, zoneList);
+        receiptSuppliesList = dao.getReceiptSupplyDAO().getReceiptSupplyList(userList, storageItemsList, zoneList, contractors);
+        receiptMovementsList = dao.getReceiptMovementDAO().getReceiptSupplyList(userList, storageItemsList, zoneList);
+        receiptDispatchesList = dao.getReceiptDispatchDAO().getReceiptDispatchList(userList, storageItemsList, zoneList, contractors);
     }
 
-    private void loadCustomersAndSuppliers() {
-        customerList = new ArrayList<>();
-        customerList.add(new Customer(-1, "Customer"));
-        customerList.get(0).setActive(true);
-
-        supplierList = new ArrayList<>();
-        supplierList.add(new Supplier(-1, "Supplier"));
-        supplierList.get(0).setActive(true);
-    }
 
     public void toUsersView(ActionEvent actionEvent) throws IOException {
         for (int i = 0; i < tabPane.getTabs().size(); i++) {
@@ -205,7 +160,7 @@ public class MainViewController {
         tab.setContent(root);
 
         UsersViewController usersViewController = fxmlLoader.getController();
-        usersViewController.init(userList, positionList, tab, currentUser);
+        usersViewController.init(dao, tab, currentUser, userList, positionList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -223,7 +178,7 @@ public class MainViewController {
         tab.setContent(root);
 
         PositionViewController positionViewController = fxmlLoader.getController();
-        positionViewController.init(positionList, tab);
+        positionViewController.init(dao, tab, positionList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -241,7 +196,7 @@ public class MainViewController {
         tab.setContent(root);
 
         ContractorController contractorController = fxmlLoader.getController();
-        contractorController.init(customerList, supplierList);
+        contractorController.init(dao, tab, contractors);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -260,7 +215,7 @@ public class MainViewController {
 
         ProductListController productListController = fxmlLoader.getController();
         productListController.explainButton.setVisible(false);
-        productListController.init(typeOfStorageItemList, groupItemsList, false);
+        productListController.init(dao, false, typeOfStorageItemList, groupItemsList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -279,7 +234,7 @@ public class MainViewController {
 
         ProductListController productListController = fxmlLoader.getController();
         productListController.explainButton.setVisible(false);
-        productListController.init(typeOfStorageItemList, groupItemsList, true);
+        productListController.init(dao, true, typeOfStorageItemList, groupItemsList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -297,7 +252,7 @@ public class MainViewController {
         tab.setContent(root);
 
         ZoneViewController productListController = fxmlLoader.getController();
-        productListController.init(zones, tabPane);
+        productListController.init(dao, tabPane, zoneList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -309,7 +264,7 @@ public class MainViewController {
 
         tab.setContent(root);
         stockReplenishmentController stockReplenishmentController = fxmlLoader.getController();
-        stockReplenishmentController.init(receiptSupplies, typeOfStorageItemList, zones, supplierList, userList, currentUser, groupItemsList, true);
+        stockReplenishmentController.init(dao, tab, true, typeOfStorageItemList, receiptSuppliesList, zoneList, contractors, userList, groupItemsList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -321,7 +276,7 @@ public class MainViewController {
 
         tab.setContent(root);
         stockReplenishmentController stockReplenishmentController = fxmlLoader.getController();
-        stockReplenishmentController.init(receiptSupplies, typeOfStorageItemList, zones, supplierList, userList, currentUser, groupItemsList, false);
+        stockReplenishmentController.init(dao, tab, false, typeOfStorageItemList, receiptSuppliesList, zoneList, contractors, userList, groupItemsList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -333,7 +288,7 @@ public class MainViewController {
 
         tab.setContent(root);
         stockDispatchController stockReplenishmentController = fxmlLoader.getController();
-        stockReplenishmentController.init(receiptDispatches, typeOfStorageItemList, zones, customerList, userList, currentUser, true);
+        stockReplenishmentController.init(dao, receiptDispatchesList, typeOfStorageItemList, zoneList, contractors, userList, true);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -351,7 +306,7 @@ public class MainViewController {
         tab.setContent(root);
 
         ProductOnStorageController productOnStorageController = fxmlLoader.getController();
-        productOnStorageController.init(zones, true);
+        productOnStorageController.init(zoneList, true);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -363,7 +318,7 @@ public class MainViewController {
 
         tab.setContent(root);
         movementController movementController = fxmlLoader.getController();
-        movementController.init(receiptMovements, typeOfStorageItemList, zones, userList, currentUser, true);
+        movementController.init(dao, receiptMovementsList, typeOfStorageItemList, zoneList, userList, true);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -375,7 +330,7 @@ public class MainViewController {
 
         tab.setContent(root);
         movementController movementController = fxmlLoader.getController();
-        movementController.init(receiptMovements, typeOfStorageItemList, zones, userList, currentUser, false);
+        movementController.init(dao, receiptMovementsList, typeOfStorageItemList, zoneList, userList, false);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -393,7 +348,7 @@ public class MainViewController {
         tab.setContent(root);
 
         BooksController productListController = fxmlLoader.getController();
-        productListController.init(receiptSupplies, receiptDispatches, receiptMovements, userList, supplierList, customerList, tabPane);
+        productListController.init(receiptSuppliesList, receiptDispatchesList, receiptMovementsList, userList, contractors, tabPane);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -411,7 +366,7 @@ public class MainViewController {
         tab.setContent(root);
 
         ProductOnStorageController productOnStorageController = fxmlLoader.getController();
-        productOnStorageController.init(zones, false);
+        productOnStorageController.init(zoneList, false);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -423,7 +378,7 @@ public class MainViewController {
 
         tab.setContent(root);
         stockDispatchController stockReplenishmentController = fxmlLoader.getController();
-        stockReplenishmentController.init(receiptDispatches, typeOfStorageItemList, zones, customerList, userList, currentUser, false);
+        stockReplenishmentController.init(dao, receiptDispatchesList, typeOfStorageItemList, zoneList, contractors, userList, false);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }

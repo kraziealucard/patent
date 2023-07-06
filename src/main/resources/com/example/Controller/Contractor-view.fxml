@@ -4,161 +4,165 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<GridPane prefHeight="511.0" prefWidth="1134.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.Controller.ContractorController">
+<GridPane prefHeight="511.0" prefWidth="1134.0" xmlns="http://javafx.com/javafx/17.0.2-ea"
+          xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.Controller.ContractorController">
     <columnConstraints>
-        <ColumnConstraints percentWidth="70" />
-        <ColumnConstraints percentWidth="30" />
+        <ColumnConstraints percentWidth="70"/>
+        <ColumnConstraints percentWidth="30"/>
     </columnConstraints>
     <rowConstraints>
-        <RowConstraints percentHeight="90" />
-        <RowConstraints percentHeight="10" />
+        <RowConstraints percentHeight="90"/>
+        <RowConstraints percentHeight="10"/>
     </rowConstraints>
 
-    <TableView fx:id="table" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="0" GridPane.vgrow="ALWAYS">
+    <TableView fx:id="table" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="0"
+               GridPane.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="columnName" text="Наиминование организации" />
-            <TableColumn fx:id="columnIsSupplier" text="Поставщик" />
-            <TableColumn fx:id="columnAddress" text="Адрес" />
-            <TableColumn fx:id="columnInformation" text="Информация" />
-            <TableColumn fx:id="columnPassport" text="Паспорт" />
-            <TableColumn fx:id="columnPhone" text="Телефоны" />
-            <TableColumn fx:id="columnBankRequisites" text="Реквизиты" />
-            <TableColumn fx:id="columnIIN" text="ИНН" />
-            <TableColumn fx:id="columnKPP" text="КПП" />
+            <TableColumn fx:id="columnName" text="Наиминование организации"/>
+            <TableColumn fx:id="columnIsSupplier" text="Поставщик"/>
+            <TableColumn fx:id="columnIsCustomer" prefWidth="75.0" text="Покупатель"/>
+            <TableColumn fx:id="columnAddress" text="Адрес"/>
+            <TableColumn fx:id="columnInformation" text="Информация"/>
+            <TableColumn fx:id="columnPassport" text="Паспорт"/>
+            <TableColumn fx:id="columnPhone" text="Телефоны"/>
+            <TableColumn fx:id="columnBankRequisites" text="Реквизиты"/>
+            <TableColumn fx:id="columnIIN" text="ИНН"/>
+            <TableColumn fx:id="columnKPP" text="КПП"/>
         </columns>
         <columnResizePolicy>
-            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
         </columnResizePolicy>
     </TableView>
 
     <GridPane GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="0" GridPane.vgrow="ALWAYS">
         <padding>
-            <Insets bottom="10" left="10" right="10" top="10" />
+            <Insets bottom="10" left="10" right="10" top="10"/>
         </padding>
         <VBox fx:id="boxForFields" spacing="10" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
             <BorderPane VBox.vgrow="ALWAYS">
                 <left>
-                    <Label text="Наиминование организации: " BorderPane.alignment="CENTER" />
+                    <Label text="Наиминование организации: " BorderPane.alignment="CENTER"/>
                 </left>
                 <right>
-                    <TextField fx:id="TFName" onAction="#TFNameAction" BorderPane.alignment="CENTER" />
+                    <TextField fx:id="TFName" onAction="#TFNameAction" BorderPane.alignment="CENTER"/>
                 </right>
             </BorderPane>
-            <CheckBox fx:id="CBisSupplier" mnemonicParsing="false" onAction="#setTypeContractor" text="Поставщик (снятая галочка означает, &#10;что контрагент - покупатель)" VBox.vgrow="ALWAYS" />
+            <HBox spacing="15.0">
+                <children>
+                    <CheckBox fx:id="CBisSupplier" mnemonicParsing="false" onAction="#setSupplier" text="Поставщик"/>
+                    <CheckBox mnemonicParsing="false" onAction="#setCustomer" text="Покупатель"/>
+                </children>
+            </HBox>
             <BorderPane VBox.vgrow="ALWAYS">
                 <left>
-                    <Label text="Адрес:" BorderPane.alignment="CENTER" />
+                    <Label text="Адрес:" BorderPane.alignment="CENTER"/>
                 </left>
                 <right>
-                    <TextField fx:id="TFaddress" onAction="#TFaddressAction" BorderPane.alignment="CENTER" />
+                    <TextField fx:id="TFaddress" onAction="#TFaddressAction" BorderPane.alignment="CENTER"/>
                 </right>
             </BorderPane>
             <BorderPane VBox.vgrow="ALWAYS">
                 <left>
-                    <Label text="Информация: " BorderPane.alignment="CENTER" />
+                    <Label text="Информация: " BorderPane.alignment="CENTER"/>
                 </left>
                 <center>
-                    <TextArea fx:id="TAInfo" prefHeight="146.0" prefWidth="143.0" BorderPane.alignment="CENTER" />
+                    <TextArea fx:id="TAInfo" prefHeight="146.0" prefWidth="143.0" BorderPane.alignment="CENTER"/>
                 </center>
             </BorderPane>
             <BorderPane VBox.vgrow="ALWAYS">
                 <left>
-                    <Label text="Паспорт:" BorderPane.alignment="CENTER" />
+                    <Label text="Паспорт:" BorderPane.alignment="CENTER"/>
                 </left>
                 <right>
-                    <TextField fx:id="TFpassport" onAction="#TFpassportAction" BorderPane.alignment="CENTER" />
+                    <TextField fx:id="TFpassport" onAction="#TFpassportAction" BorderPane.alignment="CENTER"/>
                 </right>
             </BorderPane>
             <BorderPane VBox.vgrow="ALWAYS">
                 <left>
-                    <Label text="Телефоны:" BorderPane.alignment="CENTER" />
+                    <Label text="Телефоны:" BorderPane.alignment="CENTER"/>
                 </left>
                 <right>
-                    <TextField fx:id="TFphone" onAction="#TFphoneAction" BorderPane.alignment="CENTER" />
+                    <TextField fx:id="TFphone" onAction="#TFphoneAction" BorderPane.alignment="CENTER"/>
                 </right>
             </BorderPane>
             <BorderPane VBox.vgrow="ALWAYS">
                 <left>
-                    <Label text="Реквизиты:" BorderPane.alignment="CENTER" />
+                    <Label text="Реквизиты:" BorderPane.alignment="CENTER"/>
                 </left>
                 <right>
-                    <TextField fx:id="TFbankRequisites" onAction="#TFbankRequisitesAction" BorderPane.alignment="CENTER" />
+                    <TextField fx:id="TFbankRequisites" onAction="#TFbankRequisitesAction"
+                               BorderPane.alignment="CENTER"/>
                 </right>
             </BorderPane>
             <BorderPane VBox.vgrow="ALWAYS">
                 <left>
-                    <Label text="ИНН:" BorderPane.alignment="CENTER" />
+                    <Label text="ИНН:" BorderPane.alignment="CENTER"/>
                 </left>
                 <right>
-                    <TextField fx:id="TFinn" onAction="#TFinnAction" BorderPane.alignment="CENTER" />
+                    <TextField fx:id="TFinn" onAction="#TFinnAction" BorderPane.alignment="CENTER"/>
                 </right>
             </BorderPane>
             <BorderPane VBox.vgrow="ALWAYS">
                 <left>
-                    <Label text="КПП:" BorderPane.alignment="CENTER" />
+                    <Label text="КПП:" BorderPane.alignment="CENTER"/>
                 </left>
                 <right>
-                    <TextField fx:id="TFkpp" onAction="#TFkppAction" BorderPane.alignment="CENTER" />
+                    <TextField fx:id="TFkpp" onAction="#TFkppAction" BorderPane.alignment="CENTER"/>
                 </right>
             </BorderPane>
         </VBox>
         <columnConstraints>
-            <ColumnConstraints />
+            <ColumnConstraints/>
         </columnConstraints>
         <rowConstraints>
-            <RowConstraints />
+            <RowConstraints/>
         </rowConstraints>
     </GridPane>
 
-    <HBox alignment="BOTTOM_LEFT" spacing="10" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+    <HBox alignment="BOTTOM_LEFT" spacing="10" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1"
+          GridPane.vgrow="ALWAYS">
         <Button onAction="#toFirst" text="К первому" HBox.hgrow="ALWAYS">
             <HBox.margin>
-                <Insets bottom="5.0" left="5.0" />
-            </HBox.margin></Button>
-        <Button onAction="#toLast" text="К последнему" HBox.hgrow="ALWAYS">
-            <HBox.margin>
-                <Insets bottom="5.0" />
-            </HBox.margin></Button>
-        <Button fx:id="btnAdd" mnemonicParsing="false" onAction="#addContractor" text="Добавить" HBox.hgrow="ALWAYS">
-            <HBox.margin>
-                <Insets bottom="5.0" />
+                <Insets bottom="5.0" left="5.0"/>
             </HBox.margin>
         </Button>
-      <Button fx:id="btnRemove" mnemonicParsing="false" onAction="#removeContractor" text="Удалить">
-         <HBox.margin>
-            <Insets bottom="5.0" />
-         </HBox.margin>
-      </Button>
+        <Button onAction="#toLast" text="К последнему" HBox.hgrow="ALWAYS">
+            <HBox.margin>
+                <Insets bottom="5.0"/>
+            </HBox.margin>
+        </Button>
+        <Button fx:id="btnAdd" mnemonicParsing="false" onAction="#addContractor" text="Добавить" HBox.hgrow="ALWAYS">
+            <HBox.margin>
+                <Insets bottom="5.0"/>
+            </HBox.margin>
+        </Button>
+        <Button fx:id="btnRemove" mnemonicParsing="false" onAction="#removeContractor" text="Удалить">
+            <HBox.margin>
+                <Insets bottom="5.0"/>
+            </HBox.margin>
+        </Button>
         <Button onAction="#toExcel" text="Печать" HBox.hgrow="ALWAYS">
             <HBox.margin>
-                <Insets bottom="5.0" right="5.0" />
-            </HBox.margin></Button>
-        <CheckBox fx:id="CheckBoxSelection" mnemonicParsing="false" onAction="#updateTable" text="Отобрать:" HBox.hgrow="ALWAYS">
+                <Insets bottom="5.0" right="5.0"/>
+            </HBox.margin>
+        </Button>
+        <CheckBox fx:id="CheckBoxSelection" mnemonicParsing="false" onAction="#updateTable" text="Отобрать:"
+                  HBox.hgrow="ALWAYS">
             <opaqueInsets>
-                <Insets />
+                <Insets/>
             </opaqueInsets>
             <HBox.margin>
-                <Insets bottom="7.0" />
+                <Insets bottom="7.0"/>
             </HBox.margin>
         </CheckBox>
         <ComboBox fx:id="comboBoxContactorType" onAction="#updateTable" prefWidth="150.0" HBox.hgrow="ALWAYS">
             <HBox.margin>
-                <Insets bottom="5.0" />
+                <Insets bottom="5.0"/>
             </HBox.margin>
         </ComboBox>
     </HBox>
 
-    <HBox alignment="BOTTOM_RIGHT" spacing="10" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
-        <Button mnemonicParsing="false" onAction="#cancelChanges" text="Отмена" HBox.hgrow="ALWAYS">
-            <HBox.margin>
-                <Insets bottom="5.0" />
-            </HBox.margin>
-        </Button>
-        <Button mnemonicParsing="false" onAction="#acceptChanges" text="Применить" HBox.hgrow="ALWAYS">
-            <HBox.margin>
-                <Insets bottom="5.0" />
-            </HBox.margin>
-        </Button>
-    </HBox>
+    <HBox alignment="BOTTOM_RIGHT" spacing="10" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1"
+          GridPane.vgrow="ALWAYS"/>
 
 </GridPane>

@@ -1,5 +1,7 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
+import Model.Position;
 import Model.WarehouseZone;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -20,6 +22,7 @@ import javafx.util.Callback;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class ZoneViewController {
     public TableColumn<WarehouseZone, Long> idClmn;
@@ -27,14 +30,17 @@ public class ZoneViewController {
     public TableColumn<WarehouseZone, String> forProductClmn;
     public TableColumn<WarehouseZone, Integer> numberOfCells;
     public TableColumn<WarehouseZone, Double> maxWeightClmn;
+    
     public TableView<WarehouseZone> table;
     public Button deleteBtn;
     public ContextMenu contextMenu;
     private ArrayList<WarehouseZone> zones;
     private ObservableList<WarehouseZone> items;
     private TabPane tabPane;
+    private DAOFactory dao;
 
-    public void init(ArrayList<WarehouseZone> zones, TabPane tabPane) {
+    public void init(DAOFactory dao, TabPane tabPane, ArrayList<WarehouseZone> zones) {
+        this.dao = dao;
         this.zones = zones;
         this.tabPane = tabPane;
         configureUI();
@@ -47,10 +53,9 @@ public class ZoneViewController {
 
     @FXML
     private void updateItems() {
-        items = FXCollections.observableArrayList();
-        for (WarehouseZone zone : zones) {
-            if (zone.isActive()) items.add(zone);
-        }
+        items = zones.stream().
+                filter(WarehouseZone::isActive).
+                collect(Collectors.toCollection(FXCollections::observableArrayList));
         table.setItems(items);
         table.refresh();
     }
@@ -59,9 +64,19 @@ public class ZoneViewController {
         updateItems();
         table.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            deleteBtn.setDisable(newValue == null);
+            deleteBtn.setDisable(newValue == null || !ZoneIsEmpty(newValue));
         });
 
+    }
+
+    private boolean ZoneIsEmpty(WarehouseZone w) {
+        for (int i = 0; i < w.getCells().length; i++) {
+            for (int j = 0; j < w.getCells()[i].length; j++) {
+                if (w.getCells()[i][j].getCurrentWeight() != 0) return false;
+            }
+        }
+
+        return true;
     }
 
     private void configureClmn() {
@@ -78,11 +93,10 @@ public class ZoneViewController {
             WarehouseZone zone = event.getRowValue();
             String newValue = event.getNewValue();
             if (newValue.isEmpty()) {
-                // Если новое значение пустое, вернуть предыдущее значение
                 zone.setZoneName(event.getOldValue());
             } else {
-                // В противном случае, установить новое значение
                 zone.setZoneName(newValue);
+                dao.getWarehouseZoneDAO().updateWarehouseZone(zone);
             }
         });
         forProductClmn.setCellValueFactory(cellData -> {
@@ -121,15 +135,18 @@ public class ZoneViewController {
             }
         });
         createWarehouseZoneController controller = fxmlLoader.getController();
-        controller.init(zones);
+        controller.init(dao, zones);
         stage.setResizable(false);
         stage.show();
     }
 
 
     public void deleteZones() {
-        table.getSelectionModel().getSelectedItem().setActive(false);
-        table.getItems().remove(table.getSelectionModel().getSelectedItem());
+        WarehouseZone selected = table.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
+        selected.setActive(false);
+        dao.getWarehouseZoneDAO().updateWarehouseZone(selected);
+        updateItems();
     }
 
     public void toFirst() {
@@ -153,7 +170,7 @@ public class ZoneViewController {
         tab.setContent(root);
 
         cellViewController productListController = fxmlLoader.getController();
-        productListController.init(zones, tab);
+        productListController.init(tab, zones);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }

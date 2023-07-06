@@ -11,6 +11,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
+
 public class createUserController {
     public TextField nameTextField;
     public ComboBox<Position> positionComboBox;
@@ -21,22 +23,21 @@ public class createUserController {
     public GridPane root;
     private DAOFactory dao;
     private BooleanProperty isSuccess;
-    private String nameNewUser;
+    ArrayList<User> users;
+
+    public void init(DAOFactory dao, BooleanProperty isSuccess, ArrayList<User> users) {
+        this.dao = dao;
+        this.isSuccess = isSuccess;
+        this.users = users;
+        updatePositions();
+        labelNameWindow.setText("Создание новой записи");
+    }
 
     public void init(DAOFactory dao, BooleanProperty isSuccess) {
         this.dao = dao;
         this.isSuccess = isSuccess;
-        this.nameNewUser = nameNewUser;
         updatePositions();
         labelNameWindow.setText("Создание новой записи");
-        /*stage.focusedProperty().addListener(new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                if (newValue) {
-                    updatePositions();
-                }
-            }
-        });*/
     }
 
     private void updatePositions() {
@@ -77,9 +78,10 @@ public class createUserController {
             return;
         }
 
-        dao.getUserDAO().addUser(new User(-1L, nameTextField.getText(), positionComboBox.getValue(), loginTextField.getText(), passwordTextField.getText()));
+        User newUser = new User(-1L, nameTextField.getText(), positionComboBox.getValue(), loginTextField.getText(), passwordTextField.getText());
+        newUser.setID(dao.getUserDAO().addUser(newUser));
+        if (users != null) users.add(newUser);
         isSuccess.setValue(true);
-        nameNewUser = loginTextField.getText();
         ((Stage) labelNameWindow.getScene().getWindow()).close();
     }
 }

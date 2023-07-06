@@ -6,11 +6,19 @@ import Model.WarehouseZone;
 import java.util.ArrayList;
 
 public interface IWarehouseZoneDAO {
-    long addWarehouseZone(WarehouseZone warehouseZone);
+    void addWarehouseZone(WarehouseZone warehouseZone);
 
     boolean updateWarehouseZone(WarehouseZone warehouseZone);
 
-    ArrayList<WarehouseZone> getWarehouseZones(boolean onlyActive, boolean onlyProductZone);
+    ArrayList<WarehouseZone> getWarehouseZones(boolean onlyActive);
+
+    ArrayList<WarehouseZone> getProductZones(boolean onlyActive);
+
+    ArrayList<WarehouseZone> getMaterialZones(boolean onlyActive);
+
+    Cell getCellByID(Long ID);
+
+    WarehouseZone getZoneByID(Long ID);
 
     boolean updateCell(Cell cell);
 }

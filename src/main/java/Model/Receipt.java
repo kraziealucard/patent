@@ -4,23 +4,28 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 
 public abstract class Receipt {
-    private final long ID;
+    private long ID;
     private final LocalDate date;
     private final User performer;
     private final String invoiceNumberField;
     private ArrayList<ListOfReceipt> lists;
     private boolean isProduct;
-    public Receipt(long ID, LocalDate date, User performer, String invoiceNumberField,boolean isProduct) {
+
+    public Receipt(long ID, LocalDate date, User performer, String invoiceNumberField, boolean isProduct) {
         this.lists = new ArrayList<>();
         this.ID = ID;
         this.date = date;
         this.performer = performer;
         this.invoiceNumberField = invoiceNumberField;
-        this.isProduct=isProduct;
+        this.isProduct = isProduct;
     }
 
     public long getID() {
         return ID;
+    }
+
+    public void setID(long ID) {
+        this.ID = ID;
     }
 
     public LocalDate getDate() {

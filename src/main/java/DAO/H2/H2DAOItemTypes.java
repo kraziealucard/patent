@@ -1,5 +1,6 @@
 package DAO.H2;
 
+import DAO.DAOFactory;
 import DAO.IItemTypesDAO;
 import Model.GroupItems;
 import Model.TypeOfStorageItem;
@@ -44,13 +45,14 @@ public class H2DAOItemTypes implements IItemTypesDAO {
     }
 
     @Override
-    public ArrayList<TypeOfStorageItem> getTypeList(boolean onlyActive, boolean isProduct, ArrayList<GroupItems> groupItems) {
+    public ArrayList<TypeOfStorageItem> getTypeList(boolean onlyActive, ArrayList<GroupItems> groupItems) {
         ArrayList<TypeOfStorageItem> data = new ArrayList<>();
 
-        String sql = "SELECT * FROM ItemsTypes WHERE isProduct = " + isProduct;
+        String sql = "SELECT * FROM ItemsTypes";
         if (onlyActive) {
-            sql += " AND isActive = true";
+            sql += " Where isActive = true";
         }
+
 
         try (PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
@@ -59,30 +61,75 @@ public class H2DAOItemTypes implements IItemTypesDAO {
                 long ID = resultSet.getLong("ID");
                 String name = resultSet.getString("name");
                 double weight = resultSet.getDouble("weight");
-
-                TypeOfStorageItem item = new TypeOfStorageItem(ID, name, weight, isProduct);
+                Long IDGroup = resultSet.getLong("IDGroup");
+                boolean isActive = resultSet.getBoolean("isActive");
+                boolean isProductc = resultSet.getBoolean("ISPRODUCT");
+                TypeOfStorageItem item = new TypeOfStorageItem(ID, name, weight, isProductc);
+                item.setGroup(findGroup(groupItems, IDGroup));
+                item.setActive(isActive);
                 data.add(item);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        //return data;
-        return new ArrayList<>();
+        return data;
+    }
+
+    private GroupItems findGroup(ArrayList<GroupItems> groupItemsList, Long GroupID) {
+        if (GroupID == null) return null;
+        for (GroupItems groupItem : groupItemsList) {
+            if (groupItem.getID() == GroupID) {
+                return groupItem;
+            }
+        }
+        return null;
     }
 
     @Override
     public void updateTypeList(TypeOfStorageItem type) {
-        String query = "UPDATE ItemsTypes SET name = ?, weight = ?, isProduct = ?, isActive = ? WHERE ID = ?";
+        String query = "UPDATE ItemsTypes SET name = ?, weight = ?, isProduct = ?, isActive = ?, IDGroup= ? WHERE ID = ?";
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, type.getName());
             statement.setDouble(2, type.getWeight());
             statement.setBoolean(3, type.isProduct());
             statement.setBoolean(4, type.isActive());
-            statement.setLong(5, type.getID());
+            if (type.getGroup() == null) {
+                statement.setNull(5, java.sql.Types.BIGINT);
+            } else {
+                statement.setLong(5, type.getGroup().getID());
+            }
+            statement.setLong(6, type.getID());
             statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public TypeOfStorageItem getTypeByID(long ID, DAOFactory dao) {
+        TypeOfStorageItem data = null;
+
+        String sql = "SELECT * FROM ItemsTypes WHERE ID = " + ID;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+
+                String name = resultSet.getString("name");
+                double weight = resultSet.getDouble("weight");
+                boolean isProduct = resultSet.getBoolean("isProduct");
+                boolean isActive = resultSet.getBoolean("isActive");
+                Long IDGroup = resultSet.getLong("IDGroup");
+                data = new TypeOfStorageItem(ID, name, weight, isProduct);
+                data.setGroup(dao.getGroupItemsDAO().getGroupByID(IDGroup));
+                data.setActive(isActive);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return data;
     }
 }

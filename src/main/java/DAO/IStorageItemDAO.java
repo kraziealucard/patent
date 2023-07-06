@@ -1,8 +1,8 @@
 package DAO;
 
-import Model.Customer;
+import Model.Contractor;
 import Model.StorageItem;
-import Model.Supplier;
+import Model.TypeOfStorageItem;
 import Model.WarehouseZone;
 
 import java.util.ArrayList;
@@ -12,6 +12,6 @@ public interface IStorageItemDAO {
 
     boolean updateStorageItem(StorageItem storageItem);
 
-    ArrayList<StorageItem> getStorageItem(boolean onlyOnStorage, ArrayList<WarehouseZone> warehouseZones,
-                                          ArrayList<Supplier> suppliers, ArrayList<Customer> customers);
+    ArrayList<StorageItem> getStorageItem(boolean onlyOnStorage, ArrayList<TypeOfStorageItem> types,
+                                          ArrayList<Contractor> contractors, ArrayList<WarehouseZone> zones);
 }

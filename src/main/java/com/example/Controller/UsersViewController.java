@@ -14,14 +14,10 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.SubScene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.input.MouseButton;
 import javafx.stage.*;
-import javafx.util.Callback;
 import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
 
@@ -29,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class UsersViewController {
     public TableView<User> userTable;
@@ -45,27 +42,33 @@ public class UsersViewController {
     private ArrayList<User> users;
     User currentUser;
     DAOFactory dao;
-    ObservableList<User> data;
+    ObservableList<User> ObsUser;
+    ObservableList<Position> ObsPositions;
 
-    public void init(ArrayList<User> users, ArrayList<Position> positions, Tab tab, User currentUser) {
+    public void init(DAOFactory dao, Tab tab, User currentUser, ArrayList<User> users, ArrayList<Position> positions) {
+        this.dao = dao;
         this.currentUser = currentUser;
-        //this.dao = dao;
         this.positions = positions;
         this.users = users;
 
-        ComboBoxFilter.setItems(FXCollections.observableArrayList(positions));
-        idColumn.setEditable(false);
+        ObsUser = users.stream().
+                filter(User::isActive).
+                collect(Collectors.toCollection(FXCollections::observableArrayList));
+
+        ObsPositions = positions.stream().
+                filter(Position::isActive).
+                collect(Collectors.toCollection(FXCollections::observableArrayList));
+
+        ComboBoxFilter.setItems(ObsPositions);
         userTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         setCellValueFactory();
         configColumns();
 
-        data = FXCollections.observableArrayList();
-        userTable.setItems(data);
         toFilter();
 
         tab.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) {
-                //updatePositions();
+                updatePositions();
                 toFilter();
             }
         });
@@ -149,6 +152,9 @@ public class UsersViewController {
             public void handle(TableColumn.CellEditEvent<User, String> user) {
                 if (user.getTableView().getSelectionModel().getSelectedItem() == null || Objects.equals(user.getNewValue(), "")) {
                     user.getTableView().refresh();
+                } else if (user.getNewValue().length() < 4) {
+                    showShortPasswordErrorDialog();
+                    user.getTableView().refresh();
                 } else {
                     user.getTableView().getSelectionModel().getSelectedItem().setPassword(user.getNewValue());
                     dao.getUserDAO().updateUser(user.getTableView().getSelectionModel().getSelectedItem());
@@ -193,14 +199,17 @@ public class UsersViewController {
         });
     }
 
-    private ObservableList<Position> updatePositions() {
-        ObservableList<Position> res = FXCollections.observableArrayList(positions);
-        res.removeIf(item -> !item.isActive());
-        return res;
+    private void updatePositions() {
+        Position temp = ComboBoxFilter.getValue();
+        ObsPositions.clear();
+        ObsPositions.addAll(positions.stream().
+                filter(Position::isActive).
+                collect(Collectors.toCollection(FXCollections::observableArrayList)));
+        ComboBoxFilter.setValue(temp);
     }
 
     private void configPositionColumn() {
-        positionColumn.setCellFactory(column -> new ComboBoxTableCell<User, Position>(updatePositions()) {
+        positionColumn.setCellFactory(column -> new ComboBoxTableCell<User, Position>(FXCollections.observableArrayList(positions)) {
             @Override
             public void updateItem(Position item, boolean empty) {
                 super.updateItem(item, empty);
@@ -215,9 +224,10 @@ public class UsersViewController {
         positionColumn.setOnEditCommit(event -> {
             TablePosition<User, Position> position = event.getTablePosition();
             User user = event.getTableView().getItems().get(position.getRow());
-            if (user == null) return;
+            if (user == null || user.getID() == 1) return;
             user.setPosition(event.getNewValue());
             dao.getUserDAO().updateUser(user);
+            toFilter();
         });
 
     }
@@ -234,7 +244,7 @@ public class UsersViewController {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Ошибка");
         alert.setHeaderText("Некорректный пароль");
-        alert.setContentText("Длина пароля должна быть не менее 8 символов");
+        alert.setContentText("Длина пароля должна быть не менее 4 символов");
         alert.showAndWait();
     }
 
@@ -288,48 +298,59 @@ public class UsersViewController {
 
         stage.setScene(scene);
         stage.setOnHidden(event -> {
-            showNotification();
+            if (isSuccess.getValue()) {
+                showNotification();
+            }
         });
         createUserController controller = fxmlLoader.getController();
-        controller.init(dao, isSuccess);
+        controller.init(dao, isSuccess, users);
         stage.show();
-
-
     }
 
     public void toSearch() {
         toFilter();
         if (searchTF.getText().isBlank()) return;
-        ObservableList<User> temp = FXCollections.observableArrayList();
-        for (int i = 0; i < userTable.getItems().size(); i++) {
-            if (userTable.getItems().get(i).getName().contains(searchTF.getText())) {
-                temp.add(userTable.getItems().get(i));
+        ObservableList<User> filteredData = FXCollections.observableArrayList();
+        for (User user : ObsUser) {
+            if (containsSearchText(user, searchTF.getText().toLowerCase())) {
+                if (user.getID() == 1 && currentUser != user) continue;
+                filteredData.add(user);
             }
         }
-        userTable.setItems(temp);
+
+        userTable.setItems(filteredData);
+    }
+
+    private boolean containsSearchText(User user, String searchText) {
+        String lowerCaseSearchText = searchText.toLowerCase();
+
+        return user.getName().toLowerCase().contains(lowerCaseSearchText)
+                || user.getPosition().toString().toLowerCase().contains(lowerCaseSearchText)
+                || user.getLogin().toLowerCase().contains(lowerCaseSearchText)
+                || user.getPassword().toLowerCase().contains(lowerCaseSearchText)
+                || user.getID().toString().toLowerCase().contains(lowerCaseSearchText);
     }
 
     public void showNotification() {
         Notifications notifications = Notifications.create()
                 .text("Пользователь успешно добавлен")
-                .position(Pos.BOTTOM_LEFT) // позиция уведомления
-                .hideAfter(Duration.seconds(5)) // скрытие уведомления через 5 секунд
-                .owner(userTable.getScene().getWindow()); // задание окна, на котором будет отображаться уведомление
+                .position(Pos.BOTTOM_RIGHT)
+                .hideAfter(Duration.seconds(2))
+                .owner(userTable.getScene().getWindow());
 
         notifications.show();
         toFilter();
     }
 
     public void toFilter() {
-        userTable.setItems(null);
-        data.clear();
-        data.addAll(users);
+        ObsUser.clear();
+        ObsUser.addAll(users.stream().
+                collect(Collectors.toCollection(FXCollections::observableArrayList)));
+
         if (!CheckBoxFilter.isSelected()) {
-            userTable.setItems(data);
+            userTable.setItems(ObsUser);
         } else {
-            ObservableList<User> temp = FXCollections.observableArrayList();
-            temp.addAll(data.stream().filter(e -> e.getPosition() == ComboBoxFilter.getValue()).toList());
-            userTable.setItems(temp);
+            ObsUser.removeIf(u -> !u.getPosition().equals(ComboBoxFilter.getValue()));
         }
         if (currentUser.getID() != 1) {
             userTable.getItems().removeIf(item -> item.getID() == 1);

@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.WarehouseZone;
 import Model.Cell;
 import javafx.beans.property.SimpleObjectProperty;
@@ -7,13 +8,17 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.apache.poi.xslf.usermodel.XSLFTable;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.stream.Collectors;
 
 public class cellViewController {
 
@@ -29,15 +34,15 @@ public class cellViewController {
     private ArrayList<Cell> cells;
     private ObservableList<Cell> items;
 
-    public void init(ArrayList<WarehouseZone> zones, Tab tab) {
+    public void init(Tab tab, ArrayList<WarehouseZone> zones) {
         this.zones = zones;
+        items = FXCollections.observableArrayList();
+        cells = new ArrayList<>();
         tab.selectedProperty().addListener((tabSelected, wasSelected, isSelected) -> {
             if (isSelected) {
                 refresh();
             }
         });
-        items = FXCollections.observableArrayList();
-        cells = new ArrayList<>();
         ComboBoxForFilter.getSelectionModel().selectFirst();
         idClmn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getID()));
         nameClmn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
@@ -48,22 +53,18 @@ public class cellViewController {
     }
 
     public void refresh() {
-        HashSet<WarehouseZone> uniqueZone = new HashSet<>();
-        for (WarehouseZone zone : zones) {
-            if (zone.isActive()) uniqueZone.add(zone);
-        }
-        ComboBoxForFilter.setItems(FXCollections.observableArrayList(uniqueZone));
+        ObservableList<WarehouseZone> temp = zones.stream().
+                filter(WarehouseZone::isActive).
+                collect(Collectors.toCollection(FXCollections::observableArrayList));
+        ComboBoxForFilter.setItems(temp);
 
         cells.clear();
-        for (WarehouseZone zone : zones) {
-            if (zone.isActive()) {
-                for (int j = 0; j < zone.getCells().length; j++) {
-                    cells.addAll(Arrays.asList(zone.getCells()[j]));
-                }
+        for (WarehouseZone zone : temp) {
+            for (int j = 0; j < zone.getCells().length; j++) {
+                cells.addAll(Arrays.asList(zone.getCells()[j]));
             }
         }
 
-        System.out.println(zones.size());
 
         doFilter();
     }
@@ -71,12 +72,10 @@ public class cellViewController {
     public void doFilter() {
         items.clear();
         if (!checkBoxForFilter.isSelected()) {
-            for (int i = 0; i < cells.size(); i++) {
-                if (cells.get(i).isActive()) items.add(cells.get(i));
-            }
+            items.addAll(cells);
         } else {
             ObservableList<Cell> temp = FXCollections.observableArrayList();
-            temp.addAll(cells.stream().filter(e -> e.getZone() == ComboBoxForFilter.getValue() && e.isActive()).toList());
+            temp.addAll(cells.stream().filter(e -> e.getZone() == ComboBoxForFilter.getValue()).toList());
             items.addAll(temp);
         }
 

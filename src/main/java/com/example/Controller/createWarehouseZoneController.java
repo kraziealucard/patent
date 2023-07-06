@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.WarehouseZone;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -17,26 +18,28 @@ public class createWarehouseZoneController {
     public TextField widthField;
     public ComboBox<String> CBoxZoneFor;
     public TextField maxWeightField;
+    private DAOFactory dao;
     private ArrayList<WarehouseZone> zones;
 
-    public void init(ArrayList<WarehouseZone> zones){
-        this.zones=zones;
+    public void init(DAOFactory dao, ArrayList<WarehouseZone> zones) {
+        this.dao = dao;
+        this.zones = zones;
 
         lengthField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*")) { // Проверка, что новое значение содержит только цифры
-                lengthField.setText(newValue.replaceAll("[^\\d]", "")); // Удаление всех символов, кроме цифр
+            if (!newValue.matches("\\d*")) {
+                lengthField.setText(newValue.replaceAll("[^\\d]", ""));
             }
         });
 
         widthField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*")) { // Проверка, что новое значение содержит только цифры
-                widthField.setText(newValue.replaceAll("[^\\d]", "")); // Удаление всех символов, кроме цифр
+            if (!newValue.matches("\\d*")) {
+                widthField.setText(newValue.replaceAll("[^\\d]", ""));
             }
         });
         CBoxZoneFor.getSelectionModel().selectFirst();
     }
 
-    private void showAlert(){
+    private void showAlert() {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Ошибка");
         alert.setHeaderText(null);
@@ -44,17 +47,17 @@ public class createWarehouseZoneController {
         alert.showAndWait();
     }
 
-    public void btnClick(){
-        if (zoneNameField.getText().isBlank() || lengthField.getText().isBlank() || widthField.getText().isBlank() || maxWeightField.getText().isBlank())
-        {
+    public void btnClick() {
+        if (zoneNameField.getText().isBlank() || lengthField.getText().isBlank() || widthField.getText().isBlank() || maxWeightField.getText().isBlank()) {
             showAlert();
             return;
         }
-        WarehouseZone temp=new WarehouseZone(zones.size()+1,zoneNameField.getText(),
-                Integer.parseInt(lengthField.getText()), Integer.parseInt(widthField.getText()),true,Double.parseDouble(maxWeightField.getText()));
+        WarehouseZone temp = new WarehouseZone(-1, zoneNameField.getText(),
+                Integer.parseInt(lengthField.getText()), Integer.parseInt(widthField.getText()), true, Double.parseDouble(maxWeightField.getText()));
         temp.setProductZone(CBoxZoneFor.getValue().equals("продуктов"));
+        dao.getWarehouseZoneDAO().addWarehouseZone(temp);
         zones.add(temp);
 
-        ((Stage)zoneNameField.getScene().getWindow()).close();
+        ((Stage) zoneNameField.getScene().getWindow()).close();
     }
 }

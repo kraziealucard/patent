@@ -39,20 +39,18 @@ public class BooksController {
     private ArrayList<ReceiptSupply> receiptSupplies;
     private ArrayList<ReceiptDispatch> receiptDispatches;
     private ArrayList<ReceiptMovement> receiptMovements;
-    private ArrayList<Supplier> suppliers;
-    private ArrayList<Customer> customers;
+    private ArrayList<Contractor> contractors;
     private ArrayList<User> users;
     private ToggleGroup toggleGroup;
     private TabPane tabPane;
 
     public void init(ArrayList<ReceiptSupply> receiptSupplies, ArrayList<ReceiptDispatch> receiptDispatches, ArrayList<ReceiptMovement> receiptMovements,
-                     ArrayList<User> users, ArrayList<Supplier> suppliers, ArrayList<Customer> customers, TabPane tabPane) {
+                     ArrayList<User> users, ArrayList<Contractor> contractors, TabPane tabPane) {
         this.receiptSupplies = receiptSupplies;
         this.receiptDispatches = receiptDispatches;
         this.receiptMovements = receiptMovements;
         this.users = users;
-        this.suppliers = suppliers;
-        this.customers = customers;
+        this.contractors = contractors;
         this.tabPane = tabPane;
         toggleGroup = new ToggleGroup();
 
@@ -69,8 +67,7 @@ public class BooksController {
 
     private void updatePersonComboBox() {
         ObservableList<Contractor> temp = FXCollections.observableArrayList();
-        temp.addAll(suppliers);
-        temp.addAll(customers);
+        temp.addAll(contractors);
         contractComboBox.setItems(temp);
 
         userComboBox.setItems(FXCollections.observableArrayList(users));

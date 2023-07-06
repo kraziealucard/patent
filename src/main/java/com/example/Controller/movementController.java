@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.*;
 import Model.Cell;
 import javafx.beans.property.SimpleObjectProperty;
@@ -23,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class movementController {
     public GridPane rootPane;
@@ -44,28 +46,29 @@ public class movementController {
     public Button addButton;
     public Button removeButton;
     public Button finishButton;
+    public Button ExclBtn;
     private ArrayList<ReceiptMovement> receipts;
     private ArrayList<TypeOfStorageItem> items;
     private ArrayList<WarehouseZone> zones;
     private ArrayList<User> users;
-    private User author;
     private boolean isProduct;
     private ObservableList<Model.Cell> cellObservableList;
     private ReceiptMovement currentReceipt;
+    DAOFactory dao;
 
-    public void init(ArrayList<ReceiptMovement> receipts, ArrayList<TypeOfStorageItem> items,
+    public void init(DAOFactory dao, ArrayList<ReceiptMovement> receipts, ArrayList<TypeOfStorageItem> items,
                      ArrayList<WarehouseZone> zones,
-                     ArrayList<User> users, User author, boolean isProduct) {
-
+                     ArrayList<User> users, boolean isProduct) {
+        this.dao = dao;
         this.receipts = receipts;
         this.items = items;
         this.zones = zones;
         this.users = users;
-        this.author = author;
         this.isProduct = isProduct;
-        currentReceipt = new ReceiptMovement(-1, LocalDate.now(), author, "", isProduct);
+        currentReceipt = new ReceiptMovement(-1, LocalDate.now(), null, "", isProduct);
         cellObservableList = FXCollections.observableArrayList();
         datePicker.setValue(LocalDate.now());
+        ExclBtn.setVisible(false);
 
         configureUI();
     }
@@ -75,7 +78,7 @@ public class movementController {
         ObservableList<ReceiptMovement.ListOfReceiptMovement> temp = FXCollections.observableArrayList(currentReceipt.getListMovement());
         table.setItems(temp);
 
-        System.out.println(currentReceipt.getListMovement());
+        datePicker.setValue(receiptMovement.getDate());
 
         performerComboBox.setItems(FXCollections.observableArrayList(currentReceipt.getPerformer()));
         performerComboBox.getSelectionModel().selectFirst();
@@ -84,8 +87,9 @@ public class movementController {
         invoiceNumberTextField.setText(currentReceipt.getInvoiceNumberField());
         availableAmountColumn.setVisible(false);
         availableWeightColumn.setVisible(false);
+        amountOnCellColumn.setVisible(false);
 
-        configureTable();
+        configureTableForRead();
         disableUI();
     }
 
@@ -129,6 +133,230 @@ public class movementController {
     private void updateFields() {
         updateUser();
         updateCells();
+    }
+
+    private void configureTableForRead() {
+        table.setRowFactory(tv -> {
+            TableRow<ReceiptMovement.ListOfReceiptMovement> row = new TableRow<>();
+
+            row.itemProperty().addListener((obs, oldItem, newItem) -> {
+                if (newItem != null && availableAmountColumn.isVisible()) {
+                    Integer availableAmount = availableAmountColumn.getCellData(row.getIndex());
+                    Double availableWeight = availableWeightColumn.getCellData(row.getIndex());
+                    Cell where = whereColumn.getCellData(row.getIndex());
+                    if ((availableAmount == null || availableAmount < 0) || (availableWeight == null || availableWeight < 0) || where == null) {
+                        row.getStyleClass().add("error-table-cell-editable");
+                    } else {
+                        row.getStyleClass().remove("error-table-cell-editable");
+                    }
+                } else {
+                    row.getStyleClass().remove("error-table-cell-editable");
+                }
+            });
+
+            return row;
+        });
+
+        ItemColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(currentReceipt.getListMovement().get(table.getItems().indexOf(cellData.getValue())).getItem().getType()));
+        weightItemColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(currentReceipt.getListMovement().get(table.getItems().indexOf(cellData.getValue())).getItem().getType().getWeight()));
+        fromColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(currentReceipt.getListMovement().get(table.getItems().indexOf(cellData.getValue())).getFrom()));
+        amountOnCellColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(calculateAmountOnCell(cellData)));
+        amountColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(currentReceipt.getListMovement().get(table.getItems().indexOf(cellData.getValue())).getAmount()));
+        sumWeightColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getItem().getType().getWeight() * cellData.getValue().getAmount()));
+        whereColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(currentReceipt.getListMovement().get(table.getItems().indexOf(cellData.getValue())).getWhere()));
+        availableWeightColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(calculateAvailableWeight(cellData)));
+        availableAmountColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(calculateAvailableAmount(cellData)));
+
+        ItemColumn.setCellFactory(column -> {
+            return new TableCell<>() {
+                @Override
+                protected void updateItem(TypeOfStorageItem item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (this.getTableRow() != null && this.getTableRow().getItem() != null)
+                        getStyleClass().add("table-cell-editable");
+                    if (!empty) {
+                        setText(item.toString());
+                        setOnMouseClicked(event -> {
+                            if (event.getClickCount() == 2) {
+                                ReceiptMovement.ListOfReceiptMovement listOfReceipt = getTableView().getItems().get(0);
+
+                                if (listOfReceipt != null) {
+                                    showProductTypeList(listOfReceipt);
+                                }
+                            }
+                        });
+                    } else {
+                        setText(null);
+                        setOnMouseClicked(null);
+                    }
+                }
+            };
+        });
+        amountColumn.setCellFactory(column -> {
+            TableCell<ReceiptMovement.ListOfReceiptMovement, Integer> cell = new TableCell<>() {
+                private TextField textField;
+
+                @Override
+                protected void updateItem(Integer item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (this.getTableRow() != null && this.getTableRow().getItem() != null)
+                        getStyleClass().add("table-cell-editable");
+                    if (empty) {
+                        setGraphic(null);
+                        setText(null);
+                    } else {
+                        if (isEditing()) {
+                            if (textField != null) {
+                                textField.setText(getString());
+                            }
+                            setGraphic(textField);
+                            setText(null);
+                        } else {
+                            setGraphic(null);
+                            setText(getString());
+                        }
+
+                    }
+                }
+
+                @Override
+                public void startEdit() {
+                    super.startEdit();
+                    if (textField == null) {
+                        createTextField();
+                    }
+                    textField.setText(getString());
+                    setGraphic(textField);
+                    setText(null);
+                }
+
+                @Override
+                public void cancelEdit() {
+                    super.cancelEdit();
+                    setText(getString());
+                    setGraphic(null);
+                }
+
+
+                private void createTextField() {
+                    textField = new TextField(getString());
+                    textField.setMinWidth(this.getWidth() - this.getGraphicTextGap() * 2);
+                    textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+                        if (!isNowFocused) {
+                            commitEditFromString(textField.getText());
+                        }
+                    });
+                    textField.setOnKeyPressed(event -> {
+                        if (event.getCode() == KeyCode.ENTER) {
+                            commitEditFromString(textField.getText());
+                        }
+                    });
+                    textField.setTextFormatter(createTextFormatter());
+                }
+
+                private void commitEditFromString(String text) {
+                    if (isEditing()) {
+                        Integer newValue = getConverter().fromString(text);
+                        commitEdit(newValue);
+                        setGraphic(null);
+                    }
+                }
+
+                private TextFormatter<Integer> createTextFormatter() {
+                    StringConverter<Integer> converter = getConverter();
+                    TextFormatter<Integer> textFormatter = new TextFormatter<>(converter, 0, c -> {
+                        if (c.getControlNewText().matches("-?\\d*")) {
+                            return c;
+                        }
+                        return null;
+                    });
+                    return textFormatter;
+                }
+
+                private String getString() {
+                    return getItem() != null ? getItem().toString() : "";
+                }
+
+                private StringConverter<Integer> getConverter() {
+                    return new IntegerStringConverter() {
+                        @Override
+                        public Integer fromString(String text) {
+                            try {
+                                return super.fromString(text);
+                            } catch (NumberFormatException e) {
+                                return 0;
+                            }
+                        }
+                    };
+                }
+            };
+
+            cell.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !cell.isEmpty()) {
+                    cell.setEditable(true);
+                    cell.getTableView().edit(cell.getIndex(), cell.getTableColumn());
+                }
+            });
+
+            return cell;
+        });
+        whereColumn.setCellFactory(column -> new TableCell<ReceiptMovement.ListOfReceiptMovement, Cell>() {
+            private final ComboBox<Cell> comboBox = new ComboBox<>(cellObservableList);
+
+            {
+                comboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    if (isEditing()) {
+                        commitEdit(comboBox.getValue());
+                    }
+                });
+
+                comboBox.setMinWidth(this.getWidth() - this.getGraphicTextGap() * 2);
+                comboBox.setOnMouseClicked(event -> {
+                    if (event.getClickCount() == 2) {
+                        startEdit();
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(Cell item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    if (isEditing()) {
+                        comboBox.setValue(item);
+                        setText(comboBox.getValue().getName());
+                        setGraphic(comboBox);
+                    } else {
+                        setText(item.toString());
+                        setGraphic(null);
+                    }
+                }
+            }
+
+            @Override
+            public void startEdit() {
+                super.startEdit();
+                if (!isEmpty()) {
+                    setGraphic(comboBox);
+                    setText(null);
+                    comboBox.requestFocus();
+                }
+            }
+
+            @Override
+            public void cancelEdit() {
+                super.cancelEdit();
+                setText(getItem().getName());
+                setGraphic(null);
+            }
+        });
+
+        ItemColumn.setText(isProduct ? "Товар" : "Матераиал");
+        rootPane.getStylesheets().add(getClass().getResource("editable-column.css").toExternalForm());
     }
 
     private void configureTable() {
@@ -378,6 +606,7 @@ public class movementController {
 
         ProductOnStorageController productOnStorageController = fxmlLoader.getController();
         productOnStorageController.init(zones, isProduct);
+        productOnStorageController.explainBtn.setVisible(true);
         stage.setResizable(false);
         if (itemForChange == null) {
             stage.setOnHidden(new EventHandler<WindowEvent>() {
@@ -441,13 +670,13 @@ public class movementController {
         if (cellData.getValue() == null || cellData.getValue().getItem() == null || cellData.getValue().getCell() == null)
             return null;
 
-        ArrayList<StorageItem> items = cellData.getValue().getCell().getStored();
+        ArrayList<StorageItem> storageItems = cellData.getValue().getItem().getLocationOnStorage().getStored();
+        storageItems.stream().filter(i -> i.getType() == cellData.getValue().getItem().getType())
+                .filter(i -> i.getSupplier() == cellData.getValue().getItem().getSupplier())
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        for (int i = 0; i < items.size(); i++) {
-            if (items.get(i).getType().isActive() && items.get(i) == cellData.getValue().getItem()) res++;
-        }
 
-        return res;
+        return storageItems.size();
     }
 
     private void updateCells() {
@@ -547,22 +776,35 @@ public class movementController {
     }
 
     private void moveItems() {
-        for (int i = 0; i < currentReceipt.getLists().size(); i++) {
+        for (int i = 0; i < currentReceipt.getListMovement().size(); i++) {
             ReceiptMovement.ListOfReceiptMovement listOfRecord = currentReceipt.getListMovement().get(i);
-            for (int j = 0; j < currentReceipt.getLists().get(i).getAmount(); j++) {
-                listOfRecord.getWhere().addProduct(listOfRecord.getItem());
-                listOfRecord.getCell().removeItem(listOfRecord.getItem());
-            }
+            moveConcreteStorageItem(listOfRecord);
+        }
+    }
+
+    private void moveConcreteStorageItem(ReceiptMovement.ListOfReceiptMovement listOfRecord) {
+        ArrayList<StorageItem> storageItems = listOfRecord.getItem().getLocationOnStorage().getStored();
+        storageItems.stream().filter(i -> i.getType() == listOfRecord.getItem().getType())
+                .filter(i -> i.getSupplier() == listOfRecord.getItem().getSupplier())
+                .collect(Collectors.toCollection(ArrayList::new));
+        for (int i = 0; i < listOfRecord.getAmount(); i++) {
+            storageItems.get(0).setLocationOnStorage(listOfRecord.getWhere());
+            listOfRecord.getWhere().addProduct(storageItems.get(0));
+            dao.getStorageItemDAO().updateStorageItem(storageItems.get(0));
+            listOfRecord.getFrom().removeItem(storageItems.get(0));
         }
     }
 
     public void finish(ActionEvent actionEvent) {
         if (isFieldsAreFilled() && isTableAreFilled() && isColumnAmountValuesNonNegative()) {
+            table.getSelectionModel().clearSelection();
             disableUI();
             moveItems();
-            ReceiptMovement temp = new ReceiptMovement(receipts.size() + 1, datePicker.getValue(), performerComboBox.getValue(),
+            ExclBtn.setVisible(true);
+            ReceiptMovement temp = new ReceiptMovement(-1, datePicker.getValue(), performerComboBox.getValue(),
                     invoiceNumberTextField.getText(), isProduct);
             temp.setListMovement(currentReceipt.getListMovement());
+            temp.setID(dao.getReceiptMovementDAO().addReceiptMovement(temp));
             receipts.add(temp);
             idTextField.setText(String.valueOf(receipts.size()));
             Notifications notifications = Notifications.create()

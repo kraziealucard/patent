@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.*;
 import Model.Cell;
 import javafx.beans.property.SimpleObjectProperty;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class stockDispatchController {
     public GridPane rootPane;
@@ -34,7 +36,7 @@ public class stockDispatchController {
     public Button removeButton;
     public Button finishButton;
     public ComboBox<User> performerComboBox;
-    public ComboBox<Customer> customersComboBox;
+    public ComboBox<Contractor> customersComboBox;
 
     public TableView<ReceiptDispatch.ListOfReceipt> table;
     public TableColumn<ReceiptDispatch.ListOfReceipt, TypeOfStorageItem> ItemColumn;
@@ -46,24 +48,23 @@ public class stockDispatchController {
     private ArrayList<WarehouseZone> warehouseZones;
     private ArrayList<TypeOfStorageItem> typeOfStorageItems;
     private ArrayList<ReceiptDispatch> receipts;
-    private ArrayList<Customer> customers;
+    private ArrayList<Contractor> customers;
     private ArrayList<User> users;
     private ReceiptDispatch currentReceipt;
     private ObservableList<TypeOfStorageItem> typeOfStorageItemObservableList;
     private ObservableList<User> userObservableList;
-    private ObservableList<Customer> customerObservableList;
-    private User author;
+    private ObservableList<Contractor> customerObservableList;
     private boolean isProduct;
+    private DAOFactory dao;
 
 
-    public void init(ArrayList<ReceiptDispatch> receipts, ArrayList<TypeOfStorageItem> items, ArrayList<WarehouseZone> zones,
-                     ArrayList<Customer> customers, ArrayList<User> users, User author, boolean isProduct) {
-
+    public void init(DAOFactory dao, ArrayList<ReceiptDispatch> receipts, ArrayList<TypeOfStorageItem> items, ArrayList<WarehouseZone> zones,
+                     ArrayList<Contractor> customers, ArrayList<User> users, boolean isProduct) {
+        this.dao = dao;
         this.receipts = receipts;
         this.typeOfStorageItems = items;
         this.warehouseZones = zones;
         this.isProduct = isProduct;
-        this.author = author;
         this.users = users;
         this.customers = customers;
 
@@ -73,7 +74,7 @@ public class stockDispatchController {
         customerObservableList = FXCollections.observableArrayList();
         userObservableList = FXCollections.observableArrayList();
 
-        currentReceipt = new ReceiptDispatch(-1, LocalDate.now(), author, "", null, isProduct);
+        currentReceipt = new ReceiptDispatch(-1, LocalDate.now(), null, "", null, isProduct);
         configureUI();
     }
 
@@ -85,14 +86,17 @@ public class stockDispatchController {
         performerComboBox.setItems(FXCollections.observableArrayList(currentReceipt.getPerformer()));
         performerComboBox.getSelectionModel().selectFirst();
 
+        datePicker.setValue(receiptDispatch.getDate());
+
         customersComboBox.setItems(FXCollections.observableArrayList(currentReceipt.getCustomer()));
         customersComboBox.getSelectionModel().selectFirst();
 
         idTextField.setText(String.valueOf(currentReceipt.getID()));
         invoiceNumberTextField.setText(currentReceipt.getInvoiceNumberField());
         availableAmountColumn.setVisible(false);
+        amountOnCellColumn.setVisible(false);
 
-        configureTable();
+        configureTableForRead();
         disableUI();
     }
 
@@ -155,10 +159,10 @@ public class stockDispatchController {
     }
 
     private void updateCustomers() {
-        Customer temp = customersComboBox.getValue();
+        Contractor temp = customersComboBox.getValue();
         customerObservableList.clear();
-        for (Customer customer : customers) {
-            if (customer.isActive()) customerObservableList.add(customer);
+        for (Contractor customer : customers) {
+            if (customer.isActive() && customer.isCustomer()) customerObservableList.add(customer);
         }
         if (temp != null && temp.isActive()) customersComboBox.setValue(temp);
         else customersComboBox.setValue(null);
@@ -173,6 +177,248 @@ public class stockDispatchController {
         if (temp != null) performerComboBox.setValue(temp);
     }
 
+    private void configureTableForRead() {
+
+        table.setRowFactory(tv -> {
+            TableRow<Receipt.ListOfReceipt> row = new TableRow<>();
+
+            row.itemProperty().addListener((obs, oldItem, newItem) -> {
+                if (newItem != null && availableAmountColumn.isVisible()) {
+                    Integer cellValue = availableAmountColumn.getCellData(row.getIndex());
+
+                    if (cellValue == null || cellValue < 0) {
+                        row.getStyleClass().add("error-table-cell-editable");
+                    } else {
+                        row.getStyleClass().remove("error-table-cell-editable");
+                    }
+                } else {
+                    row.getStyleClass().remove("error-table-cell-editable");
+                }
+            });
+
+            return row;
+        });
+
+        ItemColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(currentReceipt.getLists().get(table.getItems().indexOf(cellData.getValue())).getItem().getType()));
+        cellColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(currentReceipt.getLists().get(table.getItems().indexOf(cellData.getValue())).getCell()));
+        amountOnCellColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(calculateAmountOnCell(cellData)));
+        amountColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(currentReceipt.getLists().get(table.getItems().indexOf(cellData.getValue())).getAmount()));
+        availableAmountColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(calculateAvailableAmount(cellData)));
+
+        ItemColumn.setCellFactory(column -> {
+            return new TableCell<ReceiptSupply.ListOfReceipt, TypeOfStorageItem>() {
+                @Override
+                protected void updateItem(TypeOfStorageItem item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (this.getTableRow() != null && this.getTableRow() != null && this.getTableRow().getItem() != null)
+                        getStyleClass().add("table-cell-editable");
+                    if (!empty) {
+                        setText(item.toString());
+                        setOnMouseClicked(event -> {
+                            if (event.getClickCount() == 2) {
+                                ReceiptSupply.ListOfReceipt listOfReceipt = getTableView().getItems().get(getIndex());
+
+                                if (listOfReceipt != null) {
+                                    showProductTypeList(listOfReceipt);
+                                }
+                            }
+                        });
+                    } else {
+                        setText(null);
+                        setOnMouseClicked(null);
+                    }
+                }
+            };
+        });
+
+        /*cellColumn.setCellFactory(column -> new ComboBoxTableCell<ReceiptSupply.ListOfReceipt, Cell>(cellsObservableList) {
+            @Override
+            public void updateItem(Cell item, boolean empty) {
+                super.updateItem(item, empty);
+                if (this.getTableRow().getItem() != null) getStyleClass().add("table-cell-editable");
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.toString());
+                }
+            }
+        });*/
+
+        cellColumn.setCellFactory(column -> {
+            return new TableCell<ReceiptDispatch.ListOfReceipt, Cell>() {
+                private ComboBox<Cell> comboBox;
+
+                @Override
+                protected void updateItem(Cell item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (this.getTableRow().getItem() != null) getStyleClass().add("table-cell-editable");
+                    if (empty || item == null) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        if (isEditing()) {
+                            if (comboBox != null) {
+                                comboBox.setValue(item);
+                            }
+                            setText(null);
+                            setGraphic(comboBox);
+                        } else {
+                            setText(item.toString());
+                            setGraphic(null);
+                        }
+                    }
+                }
+
+                @Override
+                public void startEdit() {
+                    super.startEdit();
+
+                    if (comboBox == null) {
+                        comboBox = new ComboBox<>();
+                        comboBox.maxWidthProperty().bind(widthProperty());
+                        comboBox.setItems(updateCells());
+                        comboBox.setOnAction(e -> {
+                            commitEdit(comboBox.getValue());
+                        });
+                    }
+
+                    comboBox.setValue(getItem());
+
+                    setText(null);
+                    setGraphic(comboBox);
+                }
+
+                @Override
+                public void cancelEdit() {
+                    super.cancelEdit();
+
+                    setText(getItem().getName());
+                    setGraphic(null);
+                }
+
+                @Override
+                public void commitEdit(Cell newValue) {
+                    super.commitEdit(newValue);
+                    table.getSelectionModel().getSelectedItem().setCell(newValue);
+                    updateTable();
+                    setText(getItem().getName());
+                    setGraphic(null);
+                }
+            };
+        });
+
+        amountColumn.setCellFactory(column -> {
+            TableCell<ReceiptSupply.ListOfReceipt, Integer> cell = new TableCell<>() {
+                private TextField textField;
+
+                @Override
+                protected void updateItem(Integer item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (this.getTableRow().getItem() != null) getStyleClass().add("table-cell-editable");
+                    if (empty) {
+                        setGraphic(null);
+                        setText(null);
+                    } else {
+                        if (isEditing()) {
+                            if (textField != null) {
+                                textField.setText(getString());
+                            }
+                            setGraphic(textField);
+                            setText(null);
+                        } else {
+                            setGraphic(null);
+                            setText(getString());
+                        }
+
+                    }
+                }
+
+                @Override
+                public void startEdit() {
+                    super.startEdit();
+                    if (textField == null) {
+                        createTextField();
+                    }
+                    textField.setText(getString());
+                    setGraphic(textField);
+                    setText(null);
+                }
+
+                @Override
+                public void cancelEdit() {
+                    super.cancelEdit();
+                    setText(getString());
+                    setGraphic(null);
+                }
+
+
+                private void createTextField() {
+                    textField = new TextField(getString());
+                    textField.setMinWidth(this.getWidth() - this.getGraphicTextGap() * 2);
+                    textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+                        if (!isNowFocused) {
+                            commitEditFromString(textField.getText());
+                        }
+                    });
+                    textField.setOnKeyPressed(event -> {
+                        if (event.getCode() == KeyCode.ENTER) {
+                            commitEditFromString(textField.getText());
+                        }
+                    });
+                    textField.setTextFormatter(createTextFormatter());
+                }
+
+                private void commitEditFromString(String text) {
+                    if (isEditing()) {
+                        Integer newValue = getConverter().fromString(text);
+                        commitEdit(newValue);
+                    }
+                }
+
+                private TextFormatter<Integer> createTextFormatter() {
+                    StringConverter<Integer> converter = getConverter();
+                    TextFormatter<Integer> textFormatter = new TextFormatter<>(converter, 0, c -> {
+                        if (c.getControlNewText().matches("-?\\d*")) {
+                            return c;
+                        }
+                        return null;
+                    });
+                    return textFormatter;
+                }
+
+                private String getString() {
+                    return getItem() != null ? getItem().toString() : "";
+                }
+
+                private StringConverter<Integer> getConverter() {
+                    return new IntegerStringConverter() {
+                        @Override
+                        public Integer fromString(String text) {
+                            try {
+                                return super.fromString(text);
+                            } catch (NumberFormatException e) {
+                                return 0;
+                            }
+                        }
+                    };
+                }
+            };
+
+            cell.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !cell.isEmpty()) {
+                    cell.setEditable(true);
+                    cell.getTableView().edit(cell.getIndex(), cell.getTableColumn());
+                }
+            });
+
+            return cell;
+        });
+
+        ItemColumn.setText(isProduct ? "Товар" : "Матераиал");
+
+        rootPane.getStylesheets().add(getClass().getResource("editable-column.css").toExternalForm());
+    }
+
     private void configureTable() {
 
         table.setRowFactory(tv -> {
@@ -182,7 +428,7 @@ public class stockDispatchController {
                 if (newItem != null && availableAmountColumn.isVisible()) {
                     Integer cellValue = availableAmountColumn.getCellData(row.getIndex());
 
-                    if (cellValue != null && cellValue < 0) {
+                    if (cellValue == null || cellValue < 0) {
                         row.getStyleClass().add("error-table-cell-editable");
                     } else {
                         row.getStyleClass().remove("error-table-cell-editable");
@@ -416,18 +662,16 @@ public class stockDispatchController {
     }
 
     private Integer calculateAmountOnCell(TableColumn.CellDataFeatures<Receipt.ListOfReceipt, Integer> cellData) {
-        Integer res = 0;
         if (cellData.getValue() == null || cellData.getValue().getItem() == null || cellData.getValue().getCell() == null)
             return null;
 
-        ArrayList<StorageItem> items = cellData.getValue().getCell().getStored();
+        ArrayList<StorageItem> storageItems = cellData.getValue().getItem().getLocationOnStorage().getStored();
+        storageItems.stream().filter(i -> i.getType() == cellData.getValue().getItem().getType())
+                .filter(i -> i.getSupplier() == cellData.getValue().getItem().getSupplier())
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        for (int i = 0; i < items.size(); i++) {
-            if (items.get(i).getType().isActive() && items.get(i) == cellData.getValue().getItem()) res++;
-        }
 
-
-        return res;
+        return storageItems.size();
     }
 
     public void cancelEditItem(TableColumn.CellEditEvent<Receipt.ListOfReceipt, TypeOfStorageItem> event) {
@@ -536,21 +780,34 @@ public class stockDispatchController {
     private void removeItemsFromCell() {
         for (int i = 0; i < currentReceipt.getLists().size(); i++) {
             ReceiptDispatch.ListOfReceipt listOfRecord = currentReceipt.getLists().get(i);
-            for (int j = 0; j < currentReceipt.getLists().get(i).getAmount(); j++) {
-                listOfRecord.getItem().setCustomer(customersComboBox.getValue());
-                listOfRecord.getCell().removeItem(listOfRecord.getItem());
-            }
+            deleteConcreteStorageItem(listOfRecord);
+        }
+    }
 
+    private void deleteConcreteStorageItem(ReceiptDispatch.ListOfReceipt listOfRecord) {
+        ArrayList<StorageItem> storageItems = listOfRecord.getItem().getLocationOnStorage().getStored();
+        storageItems.stream().filter(i -> i.getType() == listOfRecord.getItem().getType())
+                .filter(i -> i.getSupplier() == listOfRecord.getItem().getSupplier())
+                .collect(Collectors.toCollection(ArrayList::new));
+        if (storageItems.size() < listOfRecord.getAmount()) return;
+        for (int i = 0; i < listOfRecord.getAmount(); i++) {
+            StorageItem s = storageItems.get(0);
+            s.setCustomer(customersComboBox.getValue());
+            s.setLocationOnStorage(null);
+            dao.getStorageItemDAO().updateStorageItem(storageItems.get(0));
+            listOfRecord.getCell().removeItem(s);
         }
     }
 
     public void finish(ActionEvent actionEvent) {
         if (isFieldsAreFilled() && isTableAreFilled() && isColumnAmountValuesNonNegative()) {
+            table.getSelectionModel().clearSelection();
             disableUI();
             removeItemsFromCell();
-            ReceiptDispatch temp = new ReceiptDispatch(receipts.size() + 1, datePicker.getValue(), performerComboBox.getValue(),
+            ReceiptDispatch temp = new ReceiptDispatch(-1, datePicker.getValue(), performerComboBox.getValue(),
                     invoiceNumberTextField.getText(), customersComboBox.getValue(), isProduct);
             temp.setLists(currentReceipt.getLists());
+            temp.setID(dao.getReceiptDispatchDAO().addReceiptDispatch(temp));
             receipts.add(temp);
             idTextField.setText(String.valueOf(receipts.size()));
             Notifications notifications = Notifications.create()
@@ -586,6 +843,7 @@ public class stockDispatchController {
 
         ProductOnStorageController productOnStorageController = fxmlLoader.getController();
         productOnStorageController.init(warehouseZones, isProduct);
+        productOnStorageController.explainBtn.setVisible(true);
         stage.setResizable(false);
         if (itemForChange == null) {
             stage.setOnHidden(new EventHandler<WindowEvent>() {

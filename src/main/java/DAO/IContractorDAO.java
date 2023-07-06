@@ -1,8 +1,7 @@
 package DAO;
 
+import Model.Cell;
 import Model.Contractor;
-import Model.Customer;
-import Model.Supplier;
 
 import java.util.ArrayList;
 
@@ -11,9 +10,10 @@ public interface IContractorDAO {
 
     boolean updateContractor(Contractor contractor);
 
-    ArrayList<Supplier> getSuppliersList(boolean onlyActive);
+    ArrayList<Contractor> getContractorsList(boolean onlyActive);
 
-    ArrayList<Customer> getCustomersList(boolean onlyActive);
+    ArrayList<Contractor> getSupplierList(boolean onlyActive);
 
-    boolean changeTypeContractor(Contractor contractor);
+    Contractor getContractorByID(Long ID);
+
 }

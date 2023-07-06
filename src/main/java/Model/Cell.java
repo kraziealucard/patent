@@ -3,7 +3,7 @@ package Model;
 import java.util.ArrayList;
 
 public class Cell {
-    private final Long ID;
+    private Long ID;
     private double currentWeight;
     private String name;
     private final ArrayList<StorageItem> stored;
@@ -33,9 +33,9 @@ public class Cell {
         return true;
     }
 
-    public boolean addProduct(StorageItem addedItem){
+    public boolean addProduct(StorageItem addedItem) {
         double w = currentWeight;
-        w+=addedItem.getType().getWeight();
+        w += addedItem.getType().getWeight();
         if (w > maxWeight) return false;
         stored.add(addedItem);
         currentWeight = w;
@@ -77,6 +77,10 @@ public class Cell {
 
     public double getMaxWeight() {
         return maxWeight;
+    }
+
+    public void setID(Long ID) {
+        this.ID = ID;
     }
 
     public ArrayList<StorageItem> getStored() {

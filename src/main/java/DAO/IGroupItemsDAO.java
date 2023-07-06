@@ -9,5 +9,7 @@ public interface IGroupItemsDAO {
 
     ArrayList<GroupItems> getGroupItemsList(boolean onlyActive);
 
+    GroupItems getGroupByID(Long ID);
+
     boolean updateGroupItem(GroupItems groupItems);
 }

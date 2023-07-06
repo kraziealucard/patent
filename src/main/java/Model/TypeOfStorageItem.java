@@ -1,7 +1,7 @@
 package Model;
 
 public class TypeOfStorageItem {
-    private final long ID;
+    private long ID;
     private String name;
     private GroupItems groupItems;
     private double weight;
@@ -59,6 +59,10 @@ public class TypeOfStorageItem {
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public void setID(long ID) {
+        this.ID = ID;
     }
 
     @Override

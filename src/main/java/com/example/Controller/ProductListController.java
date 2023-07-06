@@ -3,6 +3,7 @@ package com.example.Controller;
 import DAO.DAOFactory;
 import Model.GroupItems;
 import Model.TypeOfStorageItem;
+import Model.User;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -17,6 +18,7 @@ import javafx.stage.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProductListController {
     public TableView<TypeOfStorageItem> table;
@@ -27,18 +29,22 @@ public class ProductListController {
     public Button removeButton;
     public Button explainButton;
     public Button saveToExcelButton;
-    private ArrayList<TypeOfStorageItem> TypeOfStorageItem;
+    public ComboBox<GroupItems> groupComboBox;
+    private ObservableList<GroupItems> itemsForComboBox;
+    private ArrayList<TypeOfStorageItem> typeOfStorageItems;
     private ArrayList<GroupItems> groupItems;
     private boolean isProducts;
     private TypeOfStorageItem itemForReturn;
+    private Menu moveMenu;
+    private DAOFactory dao;
 
-    public void init(ArrayList<TypeOfStorageItem> typeOfStorageItems, ArrayList<GroupItems> groupItems, boolean isProducts) {
-        //this.groupItems = dao.getGroupItemsDAO().getGroupItemsList(true);
-        //this.TypeOfStorageItem = dao.getItemTypesDAO().getTypeList(true, isProducts, groupItems);
+    public void init(DAOFactory dao, boolean isProducts, ArrayList<TypeOfStorageItem> typeOfStorageItems, ArrayList<GroupItems> groupItems) {
+        this.dao = dao;
+        this.typeOfStorageItems = typeOfStorageItems;
         this.groupItems = groupItems;
-        this.TypeOfStorageItem = typeOfStorageItems;
         this.isProducts = isProducts;
 
+        moveMenu = new Menu("Переместить выбранный");
         ListGroup.setRoot(new TreeItem<>(new GroupItems(-1, "Все", isProducts)));
 
         ListGroup.setOnMouseClicked(mouseEvent -> {
@@ -47,6 +53,9 @@ public class ProductListController {
                 updateTable();
             }
         });
+
+        itemsForComboBox = FXCollections.observableArrayList();
+        groupComboBox.setItems(itemsForComboBox);
 
         configureUI();
         updateListView();
@@ -67,6 +76,24 @@ public class ProductListController {
         }
     }
 
+    private void moveSelectedGroupItems(GroupItems targetGroupItem, boolean forTreeGroup) {
+        if (forTreeGroup) {
+            GroupItems selectedItem = ListGroup.getSelectionModel().getSelectedItem().getValue();
+            if (selectedItem == null || selectedItem == targetGroupItem) return;
+            if (targetGroupItem.getID() == -1) targetGroupItem = null;
+            selectedItem.setParent(targetGroupItem);
+            dao.getGroupItemsDAO().updateGroupItem(selectedItem);
+            updateListView();
+            return;
+        }
+        TypeOfStorageItem selectedItem = table.getSelectionModel().getSelectedItem();
+        if (selectedItem == null) return;
+        if (targetGroupItem.getID() == -1) targetGroupItem = null;
+        selectedItem.setGroup(targetGroupItem);
+        dao.getItemTypesDAO().updateTypeList(selectedItem);
+        updateTable();
+    }
+
     private void createContextMenu() {
         ContextMenu contextMenu = new ContextMenu();
 
@@ -74,8 +101,9 @@ public class ProductListController {
         deleteItem.setOnAction(event -> {
             TreeItem<GroupItems> selectedItem = ListGroup.getSelectionModel().getSelectedItem();
             if (selectedItem != null && selectedItem != ListGroup.getRoot()) {
-                groupItems.remove(selectedItem.getValue());
-                selectedItem.getParent().getChildren().remove(selectedItem);
+                selectedItem.getValue().setActive(false);
+                dao.getGroupItemsDAO().updateGroupItem(selectedItem.getValue());
+                updateListView();
             }
         });
 
@@ -117,32 +145,33 @@ public class ProductListController {
                 value = selectedItem.getValue();
             }
             CreateGroupController controller = fxmlLoader.getController();
-            controller.init(groupItems, value, isProducts);
+            controller.init(dao, value, isProducts, groupItems);
             stage.setResizable(false);
             stage.show();
 
         });
 
-        contextMenu.getItems().addAll(deleteItem, create);
+
+        contextMenu.getItems().addAll(create, deleteItem, moveMenu);
 
         contextMenu.setOnShowing(event -> {
             TreeItem<GroupItems> selectedItem = ListGroup.getSelectionModel().getSelectedItem();
+            moveMenu.getItems().clear();
+            MenuItem rootItem = new MenuItem(ListGroup.getRoot().getValue().getName());
+            rootItem.setOnAction(eventM -> moveSelectedGroupItems(ListGroup.getRoot().getValue(), true));
+            moveMenu.getItems().add(rootItem);
+            for (GroupItems groupItem : groupItems) {
+                if (!groupItem.isActive() || groupItem.isProduct() != isProducts) continue;
+                MenuItem menuItem = new MenuItem(groupItem.getName());
+                menuItem.setOnAction(eventM -> moveSelectedGroupItems(groupItem, true));
+                moveMenu.getItems().add(menuItem);
+            }
             if (selectedItem != null && selectedItem != ListGroup.getRoot()) {
                 deleteItem.setDisable(false);
             } else deleteItem.setDisable(true);
         });
 
         ListGroup.setContextMenu(contextMenu);
-    }
-
-    public void initForSupply(ArrayList<TypeOfStorageItem> TypeOfStorageItem, boolean isProducts, TypeOfStorageItem returnedType) {
-        this.TypeOfStorageItem = TypeOfStorageItem;
-        this.isProducts = isProducts;
-        this.itemForReturn = returnedType;
-
-        configureUI();
-        updateListView();
-        updateTable();
     }
 
     private void configureUI() {
@@ -277,7 +306,7 @@ public class ProductListController {
         } else {
             groupForNewType = ListGroup.getSelectionModel().getSelectedItem().getValue();
         }
-        controller.init(TypeOfStorageItem, groupForNewType, isProducts);
+        controller.init(dao, groupForNewType, isProducts, typeOfStorageItems);
         stage.setResizable(false);
         stage.show();
     }
@@ -285,6 +314,7 @@ public class ProductListController {
     public void removeProduct() {
         if (table.getSelectionModel().getSelectedItem() == null) return;
         table.getSelectionModel().getSelectedItem().setActive(false);
+        dao.getItemTypesDAO().updateTypeList(table.getSelectionModel().getSelectedItem());
         updateListView();
         updateTable();
     }
@@ -297,45 +327,60 @@ public class ProductListController {
     }
 
     private void updateListView() {
-        ObservableList<TreeItem<GroupItems>> items;
-        items = ListGroup.getRoot().getChildren();
-        items.clear();
-        HashMap<Long, TreeItem<GroupItems>> nodeMap = new HashMap<>();
+        ArrayList<GroupItems> tempA = groupItems.stream()
+                .filter(GroupItems::isActive)
+                .filter(t -> t.isProduct() == isProducts)
+                .collect(Collectors.toCollection(ArrayList::new));
+        GroupItems temp = groupComboBox.getValue();
+        itemsForComboBox.clear();
+        itemsForComboBox.addAll(tempA);
+        itemsForComboBox.add(0, new GroupItems(-1, "Все товары", isProducts));
+        if (temp != null) groupComboBox.setValue(temp);
+        else {
+            groupComboBox.getSelectionModel().selectFirst();
+        }
+        ListGroup.getRoot().getChildren().clear();
 
-        // Строим древовидную структуру
-        for (GroupItems groupItems : this.groupItems) {
-            if (groupItems.isProduct() != isProducts) continue;
-
-            TreeItem<GroupItems> item = new TreeItem<>(groupItems);
-            nodeMap.put(groupItems.getID(), item);
-
-            if (groupItems.getParent() == null) {
-                // Если у группы нет родителя, устанавливаем ее как корневую
-                items.add(item);
+        for (GroupItems groupItem : tempA) {
+            TreeItem<GroupItems> item = new TreeItem<>(groupItem);
+            if (groupItem.getParent() == null) {
+                ListGroup.getRoot().getChildren().add(item);
             } else {
-                // Ищем родительский элемент по ID и добавляем текущий элемент в его дочерние элементы
-                TreeItem<GroupItems> parentItem = nodeMap.get(groupItems.getParent().getID());
-                if (parentItem != null) {
-                    parentItem.getChildren().add(item);
-                }
+                findParentAndAddChild(ListGroup.getRoot(), item, groupItem.getParent());
             }
         }
-        expandAllItems(ListGroup.getRoot());
 
+        expandAllItems(ListGroup.getRoot());
+    }
+
+    private void findParentAndAddChild(TreeItem<GroupItems> currentItem, TreeItem<GroupItems> newItem, GroupItems parent) {
+        if (currentItem.getValue() == parent) {
+            currentItem.getChildren().add(newItem);
+        } else {
+            for (TreeItem<GroupItems> childItem : currentItem.getChildren()) {
+                findParentAndAddChild(childItem, newItem, parent);
+            }
+        }
+    }
+
+    public void TypeSetGroup() {
+        TypeOfStorageItem select = table.getSelectionModel().getSelectedItem();
+        GroupItems selectedGroup = groupComboBox.getValue();
+        if (select == null || selectedGroup == null) return;
+        if (selectedGroup.getID() == -1) selectedGroup = null;
+        select.setGroup(selectedGroup);
+        dao.getItemTypesDAO().updateTypeList(select);
     }
 
     public void updateTable() {
+        ObservableList<TypeOfStorageItem> items = typeOfStorageItems.stream().
+                filter(TypeOfStorageItem::isActive).
+                filter(t -> t.isProduct() == isProducts).
+                collect(Collectors.toCollection(FXCollections::observableArrayList));
 
-        ObservableList<TypeOfStorageItem> items = FXCollections.observableArrayList();
         TreeItem<GroupItems> item = ListGroup.getSelectionModel().getSelectedItem();
-        if (item == ListGroup.getRoot() || item == null) {
-            for (TypeOfStorageItem product : TypeOfStorageItem) {
-                if (product.isActive() && product.isProduct() == isProducts) {
-                    items.add(product);
-                }
-            }
-        } else {
-            items.addAll(TypeOfStorageItem.stream().filter(e -> Objects.equals(e.getGroup(), item.getValue()) && e.isActive() && e.isProduct() == isProducts).toList());
+        if (item != ListGroup.getRoot() && item != null) {
+            items.removeIf(t -> t.getGroup() == null || t.getGroup().getID() != item.getValue().getID());
         }
         table.setItems(items);
         table.refresh();
@@ -344,30 +389,26 @@ public class ProductListController {
 
     public void cancelEditName(TableColumn.CellEditEvent<TypeOfStorageItem, String> event) {
         event.getRowValue().setName(event.getOldValue());
+        updateTable();
     }
 
     public void commitEditName(TableColumn.CellEditEvent<TypeOfStorageItem, String> event) {
         event.getRowValue().setName(event.getNewValue());
-        updateListView();
-        updateTable();
-    }
-
-    public void cancelEditGroup(TableColumn.CellEditEvent<TypeOfStorageItem, GroupItems> event) {
-        event.getRowValue().setGroup(event.getOldValue());
-    }
-
-    public void commitEditGroup(TableColumn.CellEditEvent<TypeOfStorageItem, GroupItems> event) {
-        event.getRowValue().setGroup(event.getNewValue());
+        dao.getItemTypesDAO().updateTypeList(event.getRowValue());
         updateListView();
         updateTable();
     }
 
     public void cancelEditWeight(TableColumn.CellEditEvent<TypeOfStorageItem, Double> event) {
         event.getRowValue().setWeight(event.getOldValue());
+        dao.getItemTypesDAO().updateTypeList(event.getRowValue());
+        updateListView();
+        updateTable();
     }
 
     public void commitEditWeight(TableColumn.CellEditEvent<TypeOfStorageItem, Double> event) {
         event.getRowValue().setWeight(event.getNewValue());
+        dao.getItemTypesDAO().updateTypeList(event.getRowValue());
         updateListView();
         updateTable();
     }

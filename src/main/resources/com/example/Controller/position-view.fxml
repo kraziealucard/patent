@@ -28,7 +28,8 @@
                 <Insets bottom="5.0"/>
             </HBox.margin>
         </Label>
-        <TextField maxWidth="1.7976931348623157E308" prefHeight="26.0" promptText="Поиск..." HBox.hgrow="ALWAYS">
+        <TextField fx:id="searchTF" maxWidth="1.7976931348623157E308" onAction="#toSearch" prefHeight="26.0"
+                   promptText="Поиск..." HBox.hgrow="ALWAYS">
             <HBox.margin>
                 <Insets left="5.0"/>
             </HBox.margin>
@@ -60,9 +61,9 @@
 
                 <Label prefHeight="34.0" prefWidth="59.0" text="Права доступа:" wrapText="true"/>
                 <VBox spacing="10.0">
-                    <CheckBox fx:id="CBEditUserAndRole" disable="true"
-                              onAction="#setEditUserAndRolePermissions" prefHeight="34.0" prefWidth="206.0"
-                              text="Редактирование &#10;пользователей и должностей" VBox.vgrow="ALWAYS">
+                    <CheckBox fx:id="CBEditUserAndRole" disable="true" onAction="#setEditUserAndRolePermissions"
+                              prefHeight="34.0" prefWidth="206.0" text="Редактирование &#10;пользователей и должностей"
+                              VBox.vgrow="ALWAYS">
                         <VBox.margin>
                             <Insets/>
                         </VBox.margin>
@@ -85,8 +86,8 @@
                     <CheckBox fx:id="CBEditCounterpart" disable="true" layoutX="15.0" layoutY="20.0"
                               onAction="#setEditCounterparty" prefHeight="34.0" prefWidth="206.0"
                               text="Редактирование контрагентов"/>
-                    <CheckBox fx:id="CBViewBooks" disable="true" onAction="#setViewBook"
-                              text="Просмотр книг записей" VBox.vgrow="ALWAYS">
+                    <CheckBox fx:id="CBViewBooks" disable="true" onAction="#setViewBook" text="Просмотр книг записей"
+                              VBox.vgrow="ALWAYS">
                         <VBox.margin>
                             <Insets top="5.0"/>
                         </VBox.margin>

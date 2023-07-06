@@ -1,7 +1,7 @@
 package Model;
 
 public class WarehouseZone {
-    private final Long ID;
+    private Long ID;
     private String zoneName;
     private Cell[][] cells;
     private boolean isActive;
@@ -72,6 +72,16 @@ public class WarehouseZone {
 
     public void setMaxWeight(Double maxWeight) {
         this.maxWeight = maxWeight;
+    }
+
+    public void setID(long ID) {
+        this.ID = ID;
+        for (int i = 0; i < cells.length; i++) {
+            for (int j = 0; j < cells[i].length; j++) {
+                String cellName = ID + " - " + (i + 1) + " || " + (j + 1);
+                cells[i][j].setName(cellName);
+            }
+        }
     }
 
     @Override

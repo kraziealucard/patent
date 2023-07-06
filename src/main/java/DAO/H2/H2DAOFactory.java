@@ -59,7 +59,7 @@ public class H2DAOFactory extends DAOFactory {
             if (resultSet.next()) {
                 tableCount = resultSet.getInt("table_count");
             }
-            if (tableCount == 16) return false;
+            if (tableCount == 14) return false;
 
             sql = "";
             sql = createTablePositions(sql);
@@ -67,8 +67,6 @@ public class H2DAOFactory extends DAOFactory {
             sql = createTableZones(sql);
             sql = createTableCell(sql);
             sql = createTableContractor(sql);
-            sql = createTableCustomer(sql);
-            sql = createTableSupplier(sql);
             sql = createTableGroupTable(sql);
             sql = createTableItemsTypes(sql);
             sql = createTableReceiptDispatch(sql);
@@ -156,29 +154,9 @@ public class H2DAOFactory extends DAOFactory {
                     bankRequisites VARCHAR(255),
                     IIN VARCHAR(12),
                     KPP VARCHAR(9) ,
-                    isActive BOOLEAN NOT NULL
-                );
-                                
-                """;
-    }
-
-    private String createTableCustomer(String sql) {
-        return sql += """
-                CREATE TABLE IF NOT EXISTS Customer (
-                    ContractorID INT,
-                    PRIMARY KEY (ContractorID),
-                    FOREIGN KEY (ContractorID) REFERENCES Contractor(ID)
-                );
-                                
-                """;
-    }
-
-    private String createTableSupplier(String sql) {
-        return sql += """
-                CREATE TABLE IF NOT EXISTS Supplier (
-                    ContractorID INT,
-                    PRIMARY KEY (ContractorID),
-                    FOREIGN KEY (ContractorID) REFERENCES Contractor(ID)
+                    isActive BOOLEAN NOT NULL,
+                    isCustomer BOOLEAN NOT NULL,
+                    isSupplier BOOLEAN NOT NULL
                 );
                                 
                 """;
@@ -190,7 +168,7 @@ public class H2DAOFactory extends DAOFactory {
                     ID BIGINT PRIMARY KEY auto_increment,
                     name VARCHAR(30) NOT NULL,
                     isProduct BOOLEAN NOT NULL,
-                    IDParentGroup BIGINT NOT NULL,
+                    IDParentGroup BIGINT,
                     isActive BOOLEAN NOT NULL,
                     FOREIGN KEY (IDParentGroup) references GroupTable(ID)
                 );
@@ -216,14 +194,14 @@ public class H2DAOFactory extends DAOFactory {
     private String createTableReceiptDispatch(String sql) {
         return sql += """
                 CREATE TABLE IF NOT EXISTS ReceiptDispatch (
-                    ID INT PRIMARY KEY,
+                    ID INT PRIMARY KEY auto_increment,
                     date DATE,
                     performerID INT,
                     invoiceNumberField VARCHAR(255),
                     isProduct BOOLEAN,
                     customerID INT,
                     FOREIGN KEY (performerID) REFERENCES Users(ID),
-                    FOREIGN KEY (customerID) REFERENCES Customer(CONTRACTORID)
+                    FOREIGN KEY (customerID) REFERENCES CONTRACTOR(ID)
                 );
                                 
                 """;
@@ -253,7 +231,7 @@ public class H2DAOFactory extends DAOFactory {
                     isProduct BOOLEAN,
                     supplierID INT,
                     FOREIGN KEY (performerID) REFERENCES Users(ID),
-                    FOREIGN KEY (supplierID) REFERENCES Supplier(CONTRACTORID)
+                    FOREIGN KEY (supplierID) REFERENCES CONTRACTOR(ID)
                 );
                                 
                 """;
@@ -264,13 +242,13 @@ public class H2DAOFactory extends DAOFactory {
                 CREATE TABLE IF NOT EXISTS StorageItem (
                     ID BIGINT PRIMARY KEY auto_increment,
                     IDItemsType BIGINT NOT NULL,
-                    IDCell BIGINT NOT NULL,
+                    IDCell BIGINT,
                     IDSupplier BIGINT NOT NULL,
                     IDCustomer BIGINT,
                     FOREIGN KEY (IDItemsType) references ITEMSTYPES(ID),
                     FOREIGN KEY (IDCell) references Cell(ID),
-                    FOREIGN KEY (IDSupplier) references Supplier(ContractorID),
-                    FOREIGN KEY (IDCustomer) references Customer(ContractorID)
+                    FOREIGN KEY (IDSupplier) references CONTRACTOR(ID),
+                    FOREIGN KEY (IDCustomer) references CONTRACTOR(ID)
                 );
                                 
                 """;

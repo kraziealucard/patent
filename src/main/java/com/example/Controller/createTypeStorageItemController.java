@@ -1,5 +1,6 @@
 package com.example.Controller;
 
+import DAO.DAOFactory;
 import Model.GroupItems;
 import Model.TypeOfStorageItem;
 import javafx.scene.control.Button;
@@ -14,14 +15,16 @@ public class createTypeStorageItemController {
     public TextField nameField;
     public TextField weightField;
     public Button btn;
-    private ArrayList<TypeOfStorageItem> typeOfStorageItems;
     private GroupItems selectedGroup;
     private boolean isProduct;
+    private DAOFactory dao;
+    private ArrayList<TypeOfStorageItem> types;
 
-    public void init(ArrayList<TypeOfStorageItem> typeOfStorageItems,GroupItems selectedGroup, boolean isProduct) {
-        this.typeOfStorageItems = typeOfStorageItems;
+    public void init(DAOFactory dao, GroupItems selectedGroup, boolean isProduct, ArrayList<TypeOfStorageItem> types) {
+        this.dao = dao;
         this.isProduct = isProduct;
-        this.selectedGroup=selectedGroup;
+        this.selectedGroup = selectedGroup;
+        this.types = types;
 
         weightField.setTextFormatter(new TextFormatter<>(new IntegerStringConverter(), 0,
                 change -> {
@@ -39,7 +42,8 @@ public class createTypeStorageItemController {
         }
         TypeOfStorageItem newItem = new TypeOfStorageItem(-1, nameField.getText(), Double.parseDouble(weightField.getText()), isProduct);
         newItem.setGroup(selectedGroup);
-        typeOfStorageItems.add(newItem);
+        newItem.setID(dao.getItemTypesDAO().addItemTypes(newItem));
+        types.add(newItem);
         ((Stage) nameField.getScene().getWindow()).close();
     }
 }

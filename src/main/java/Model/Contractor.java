@@ -1,7 +1,7 @@
 package Model;
 
-public abstract class Contractor implements Cloneable {
-    private final long ID;
+public class Contractor {
+    private long ID;
     private String name;
     private String address;
     private String information;
@@ -11,10 +11,16 @@ public abstract class Contractor implements Cloneable {
     private String IIN;
     private String KPP;
     private boolean isActive;
+    private boolean isCustomer;
+    private boolean isSupplier;
+
 
     public Contractor(long ID, String name) {
         this.ID = ID;
         this.name = name;
+        this.isActive = true;
+        this.isCustomer = false;
+        this.isSupplier = false;
     }
 
     public long getID() {
@@ -98,14 +104,23 @@ public abstract class Contractor implements Cloneable {
         return name;
     }
 
-    @Override
-    public Contractor clone() {
-        try {
-            Contractor clone = (Contractor) super.clone();
-            // TODO: copy mutable state here, so the clone can't change the internals of the original
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
+    public boolean isCustomer() {
+        return isCustomer;
+    }
+
+    public void setCustomer(boolean customer) {
+        isCustomer = customer;
+    }
+
+    public boolean isSupplier() {
+        return isSupplier;
+    }
+
+    public void setID(long ID) {
+        this.ID = ID;
+    }
+
+    public void setSupplier(boolean supplier) {
+        isSupplier = supplier;
     }
 }

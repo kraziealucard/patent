@@ -3,18 +3,18 @@ package Model;
 import java.time.LocalDate;
 
 public class ReceiptDispatch extends Receipt {
-    Customer customer;
+    Contractor customer;
 
-    public ReceiptDispatch(long ID, LocalDate date, User performer, String invoiceNumberField, Customer customer,boolean isProduct) {
-        super(ID, date, performer, invoiceNumberField,isProduct);
+    public ReceiptDispatch(long ID, LocalDate date, User performer, String invoiceNumberField, Contractor customer, boolean isProduct) {
+        super(ID, date, performer, invoiceNumberField, isProduct);
         this.customer = customer;
     }
 
-    public Customer getCustomer() {
+    public Contractor getCustomer() {
         return customer;
     }
 
-    public void setCustomer(Customer customer) {
+    public void setCustomer(Contractor customer) {
         this.customer = customer;
     }
 }

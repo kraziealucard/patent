@@ -15,7 +15,7 @@
         <RowConstraints percentHeight="6.0" vgrow="SOMETIMES"/>
     </rowConstraints>
 
-    <TableView fx:id="table" prefHeight="200.0" prefWidth="200.0">
+    <TableView fx:id="table" editable="true" prefHeight="200.0" prefWidth="200.0">
         <contextMenu>
             <ContextMenu fx:id="contextMenu">
                 <items>
@@ -26,7 +26,7 @@
 
         <columns>
             <TableColumn fx:id="idClmn" editable="false" minWidth="-1.0" prefWidth="-1.0" text="ID"/>
-            <TableColumn fx:id="nameClmn" editable="false" minWidth="-1.0" prefWidth="75.0" text="Название"/>
+            <TableColumn fx:id="nameClmn" minWidth="-1.0" prefWidth="75.0" text="Название"/>
             <TableColumn fx:id="forProductClmn" editable="false" minWidth="-1.0" prefWidth="-1.0" text="Для товаров"/>
             <TableColumn fx:id="maxWeightClmn" editable="false" prefWidth="-1.0" text="Максимальный вес ячейки"/>
             <TableColumn fx:id="numberOfCells" editable="false" minWidth="-1.0" prefWidth="-1.0" text="Кол-во ячеек"/>

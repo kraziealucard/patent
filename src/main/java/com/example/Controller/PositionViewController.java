@@ -11,6 +11,7 @@ import javafx.scene.layout.GridPane;
 
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class PositionViewController {
     public ListView<Position> positionListView;
@@ -23,18 +24,19 @@ public class PositionViewController {
     public CheckBox CBEditCounterpart;
     public Button btnRemovePosition;
     public GridPane root;
-    private ArrayList<Position> positions;
+    public TextField searchTF;
     DAOFactory dao;
+    ArrayList<Position> positions;
 
-    public void init(ArrayList<Position> positions, Tab tab) {
-        //this.dao = dao;
+    public void init(DAOFactory dao, Tab tab, ArrayList<Position> positions) {
         this.positions = positions;
+        this.dao = dao;
         configureUI(tab);
     }
 
     private void configureUI(Tab tab) {
         configureListView();
-        //Устанавливаем имя должности при смене фокуса с поля для имени должности
+        positionListView.getSelectionModel().selectFirst();
         positionNameField.focusedProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue) {
                 saveNewNameForPosition();
@@ -43,7 +45,6 @@ public class PositionViewController {
 
         tab.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) {
-                //this.positions = dao.getPositionDAO().getPositionList(true);
                 updateListView();
             }
         });
@@ -54,23 +55,23 @@ public class PositionViewController {
         if (positionListView.getSelectionModel().getSelectedItem() != null) {
             temp = positionListView.getSelectionModel().getSelectedItem();
         }
-        ObservableList<Position> items = FXCollections.observableArrayList();
+        ObservableList<Position> items = positions.stream()
+                .filter(Position::isActive)
+                .collect(Collectors.toCollection(FXCollections::observableArrayList));
         positionListView.setItems(items);
-        items.addAll(positions);
+
         positionListView.refresh();
         if (temp != null) positionListView.getSelectionModel().select(temp);
     }
 
     private void configureListView() {
         updateListView();
-
-        //  Отслеживаем переключение элементов ListView:
-        //      при переключении отображаем информацию об элементах и включаем элементы пользовательского интерфейса
-        //      если фокус отсутсвует на любом из элементов или если фокус на "Администратор" ,то элементы пользовательского интерфейса отключается
+        positionListView.getSelectionModel().selectFirst();
         positionListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (positionListView.getItems().size() != 0) displayPermissionsForPosition(newValue);
-            if (newValue == null || Objects.equals(newValue.getName(), "Администратор")) switchDisableUI(true);
-            else switchDisableUI(false);
+            if (positionListView.getItems().size() != 0 && newValue != null) {
+                displayPermissionsForPosition(newValue);
+            }
+            switchDisableUI(newValue == null || Objects.equals(newValue.getName(), "Администратор"));
         });
         positionListView.getSelectionModel().selectFirst();
     }
@@ -88,7 +89,7 @@ public class PositionViewController {
     }
 
     private void displayPermissionsForPosition(Position p) {
-        positionNameField.setText(p.toString());
+        positionNameField.setText(p == null ? "" : p.toString());
         CBEditUserAndRole.setSelected(false);
         CBWarehouseEdit.setSelected(false);
         CBEditLogistics.setSelected(false);
@@ -134,7 +135,6 @@ public class PositionViewController {
         if (positionListView.getSelectionModel().getSelectedItem() == null) return;
         positionListView.getSelectionModel().getSelectedItem().setActive(!positionListView.getSelectionModel().getSelectedItem().isActive());
         dao.getPositionDAO().updatePosition(positionListView.getSelectionModel().getSelectedItem());
-        positions.remove(positionListView.getSelectionModel().getSelectedItem());
         updateListView();
     }
 
@@ -210,5 +210,11 @@ public class PositionViewController {
             positionListView.getSelectionModel().getSelectedItem().getPermissions().remove(Permission.ViewBook);
         }
         dao.getPositionDAO().updatePosition(positionListView.getSelectionModel().getSelectedItem());
+    }
+
+    public void toSearch(ActionEvent actionEvent) {
+        updateListView();
+        if (searchTF.getText().isBlank()) return;
+        positionListView.getItems().removeIf(p -> !p.getName().toLowerCase().contains(searchTF.getText().toLowerCase()));
     }
 }
