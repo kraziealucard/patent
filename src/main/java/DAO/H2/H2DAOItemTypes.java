@@ -3,12 +3,10 @@ package DAO.H2;
 import DAO.DAOFactory;
 import DAO.IItemTypesDAO;
 import Model.GroupItems;
+import Model.StorageItem;
 import Model.TypeOfStorageItem;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +15,29 @@ public class H2DAOItemTypes implements IItemTypesDAO {
 
     public H2DAOItemTypes(Connection connection) {
         this.connection = connection;
+    }
+
+
+    public void ABCAnalyse(List<TypeOfStorageItem> types)  {
+        String query = "UPDATE ItemsTypes SET grade = ? " + "WHERE ID = ?";
+
+        try (PreparedStatement statement=connection.prepareStatement(query)) {
+            connection.setAutoCommit(false);
+            for (TypeOfStorageItem type:types){
+                statement.setString(1,type.getGrade());
+                statement.setLong(2,type.getID());
+                statement.addBatch();
+            }
+
+            statement.executeBatch();
+            connection.commit();
+            connection.setAutoCommit(true);
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+        finally {
+        }
     }
 
     @Override
@@ -63,10 +84,12 @@ public class H2DAOItemTypes implements IItemTypesDAO {
                 double weight = resultSet.getDouble("weight");
                 Long IDGroup = resultSet.getLong("IDGroup");
                 boolean isActive = resultSet.getBoolean("isActive");
-                boolean isProductc = resultSet.getBoolean("ISPRODUCT");
-                TypeOfStorageItem item = new TypeOfStorageItem(ID, name, weight, isProductc);
+                boolean isProduct = resultSet.getBoolean("ISPRODUCT");
+                TypeOfStorageItem item = new TypeOfStorageItem(ID, name, weight, isProduct);
                 item.setGroup(findGroup(groupItems, IDGroup));
                 item.setActive(isActive);
+                String s =resultSet.getString("GRADE");
+                item.setGrade(s);
                 data.add(item);
             }
         } catch (SQLException e) {
@@ -88,7 +111,8 @@ public class H2DAOItemTypes implements IItemTypesDAO {
 
     @Override
     public void updateTypeList(TypeOfStorageItem type) {
-        String query = "UPDATE ItemsTypes SET name = ?, weight = ?, isProduct = ?, isActive = ?, IDGroup= ? WHERE ID = ?";
+        String query = "UPDATE ItemsTypes SET name = ?, weight = ?, isProduct = ?, isActive = ?, IDGroup= ?, grade = ? " +
+                "WHERE ID = ?";
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, type.getName());
             statement.setDouble(2, type.getWeight());
@@ -99,7 +123,9 @@ public class H2DAOItemTypes implements IItemTypesDAO {
             } else {
                 statement.setLong(5, type.getGroup().getID());
             }
-            statement.setLong(6, type.getID());
+            if (type.getGrade()==null) statement.setNull(6, Types.CHAR);
+            else statement.setString(6, String.valueOf( type.getGrade() ));
+            statement.setLong(7, type.getID());
             statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -121,10 +147,12 @@ public class H2DAOItemTypes implements IItemTypesDAO {
                 double weight = resultSet.getDouble("weight");
                 boolean isProduct = resultSet.getBoolean("isProduct");
                 boolean isActive = resultSet.getBoolean("isActive");
+                String grade=resultSet.getString("GRADE");
                 Long IDGroup = resultSet.getLong("IDGroup");
                 data = new TypeOfStorageItem(ID, name, weight, isProduct);
                 data.setGroup(dao.getGroupItemsDAO().getGroupByID(IDGroup));
                 data.setActive(isActive);
+                data.setGrade(grade);
             }
         } catch (SQLException e) {
             e.printStackTrace();

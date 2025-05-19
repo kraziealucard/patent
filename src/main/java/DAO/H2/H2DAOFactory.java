@@ -135,6 +135,7 @@ public class H2DAOFactory extends DAOFactory {
                     ID BIGINT PRIMARY KEY auto_increment,
                     IDZone BIGINT NOT NULL,
                     name VARCHAR(35) NOT NULL,
+                    Grade VARCHAR(11) NOT NULL,
                     isActive BOOLEAN NOT NULL,
                     FOREIGN KEY (IDZone) references WarehouseZone(ID)
                 );
@@ -183,6 +184,7 @@ public class H2DAOFactory extends DAOFactory {
                     IDGroup BIGINT,
                     name VARCHAR(255) NOT NULL,
                     weight DOUBLE NOT NULL,
+                    grade CHARACTER,
                     isProduct BOOLEAN NOT NULL,
                     isActive BOOLEAN NOT NULL,
                     FOREIGN KEY (IDGroup) references GroupTable(ID)

@@ -31,6 +31,8 @@
             <TableColumn fx:id="zoneClmn" editable="false" text="Зона"/>
             <TableColumn fx:id="weightClmn" editable="false" text="Текущий вес"/>
             <TableColumn fx:id="maxWeightClmn" editable="false" prefWidth="75.0" text="Максимальный вес"/>
+            <TableColumn fx:id="isUsefulClmn" prefWidth="75.0" text="Удобность ячейки"
+                         onEditCommit="#commitEditGrade" onEditCancel="#cancelEditGrade"/>
         </columns>
         <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>

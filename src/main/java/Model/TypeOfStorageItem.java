@@ -1,5 +1,7 @@
 package Model;
 
+import javafx.collections.ObservableList;
+
 public class TypeOfStorageItem {
     private long ID;
     private String name;
@@ -7,6 +9,7 @@ public class TypeOfStorageItem {
     private double weight;
     private boolean isProduct;
     private boolean isActive;
+    private String grade;
 
     public TypeOfStorageItem(long ID, String name, double weight, boolean isProduct) {
         this.ID = ID;
@@ -63,6 +66,14 @@ public class TypeOfStorageItem {
 
     public void setID(long ID) {
         this.ID = ID;
+    }
+
+    public String getGrade() {
+        return grade;
+    }
+
+    public void setGrade(String grade) {
+        this.grade = grade;
     }
 
     @Override

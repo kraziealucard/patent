@@ -20,7 +20,7 @@ public class WarehouseZone {
         for (int i = 0; i < length; i++) {
             for (int j = 0; j < width; j++) {
                 String cellName = ID + " - " + (i + 1) + " || " + (j + 1);
-                cells[i][j] = new Cell(-1, cellName, this, maxWeight);
+                cells[i][j] = new Cell(-1, cellName, this, maxWeight,"Стандартный");
             }
         }
     }

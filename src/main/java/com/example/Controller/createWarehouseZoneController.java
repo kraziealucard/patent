@@ -36,6 +36,13 @@ public class createWarehouseZoneController {
                 widthField.setText(newValue.replaceAll("[^\\d]", ""));
             }
         });
+
+        maxWeightField.textProperty().addListener((observable,oldValue,newValue) -> {
+            if (!newValue.matches("\\d*(\\.\\d*)?")) {
+                maxWeightField.setText(oldValue);
+            }
+        });
+
         CBoxZoneFor.getSelectionModel().selectFirst();
     }
 

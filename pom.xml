@@ -15,6 +15,9 @@
     </properties>
 
     <dependencies>
+
+
+
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
@@ -131,6 +134,11 @@
             <artifactId>javafx-base</artifactId>
             <version>17.0.2</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.ortools</groupId>
+            <artifactId>ortools-java</artifactId>
+            <version>9.9.3963</version> </dependency>
     </dependencies>
 
     <build>

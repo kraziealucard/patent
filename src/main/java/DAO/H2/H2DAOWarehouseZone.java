@@ -39,7 +39,7 @@ public class H2DAOWarehouseZone implements IWarehouseZoneDAO {
             e.printStackTrace();
         }
 
-        query = "INSERT INTO Cell (IDZone, name, isActive) VALUES (?, ?, ?)";
+        query = "INSERT INTO Cell (IDZone, name, isActive, Grade) VALUES (?, ?, ?, ?)";
 
         for (int i = 0; i < warehouseZone.getCells().length; i++) {
             for (int j = 0; j < warehouseZone.getCells()[i].length; j++) {
@@ -48,6 +48,7 @@ public class H2DAOWarehouseZone implements IWarehouseZoneDAO {
                     statement.setLong(1, warehouseZone.getID());
                     statement.setString(2, warehouseZone.getCells()[i][j].getName());
                     statement.setBoolean(3, warehouseZone.isActive());
+                    statement.setString(4, warehouseZone.getCells()[i][j].getGrade());
 
                     int rowsInserted = statement.executeUpdate();
 
@@ -140,7 +141,8 @@ public class H2DAOWarehouseZone implements IWarehouseZoneDAO {
                     long id = resultSet.getLong("ID");
                     String name = resultSet.getString("name");
                     boolean isActive = resultSet.getBoolean("isActive");
-                    Cell c = new Cell(id, name, datum, datum.getMaxWeight());
+                    String grade=resultSet.getString("Grade");
+                    Cell c = new Cell(id, name, datum, datum.getMaxWeight(),grade);
                     c.setActive(isActive);
                     cells.add(c);
                 }
@@ -154,7 +156,8 @@ public class H2DAOWarehouseZone implements IWarehouseZoneDAO {
             for (int i = 0, c = 0; i < datum.getCells().length; i++) {
                 for (int j = 0; j < datum.getCells()[i].length; j++) {
                     Cell cell = datum.getCells()[i][j];
-                    cell.setID(cells.get(c++).getID());
+                    cell.setID(cells.get(c).getID());
+                    cell.setGrade(cells.get(c++).getGrade());
                 }
             }
         }
@@ -215,7 +218,8 @@ public class H2DAOWarehouseZone implements IWarehouseZoneDAO {
                     String name = resultSet.getString("name");
                     boolean isActive = resultSet.getBoolean("isActive");
                     double maxWeight = resultSet.getDouble("maxWeight");
-                    Cell c = new Cell(id, name, datum, maxWeight);
+                    String Grade=resultSet.getString("Grade");
+                    Cell c = new Cell(id, name, datum, maxWeight,Grade);
                     c.setActive(isActive);
                     cells.add(c);
                 }
@@ -290,7 +294,8 @@ public class H2DAOWarehouseZone implements IWarehouseZoneDAO {
                     String name = resultSet.getString("name");
                     boolean isActive = resultSet.getBoolean("isActive");
                     double maxWeight = resultSet.getDouble("maxWeight");
-                    Cell c = new Cell(id, name, datum, maxWeight);
+                    String Grade=resultSet.getString("Grade");
+                    Cell c = new Cell(id, name, datum, maxWeight,Grade);
                     c.setActive(isActive);
                     cells.add(c);
                 }
@@ -323,7 +328,8 @@ public class H2DAOWarehouseZone implements IWarehouseZoneDAO {
                 WarehouseZone zone = getZoneByID(resultSet.getLong("IDZONE"));
                 String name = resultSet.getString("NAME");
                 boolean isActive = resultSet.getBoolean("isActive");
-                res = new Cell(ID, name, zone, zone.getMaxWeight());
+                String Grade=resultSet.getString("Grade");
+                res = new Cell(ID, name, zone, zone.getMaxWeight(),Grade);
                 res.setActive(isActive);
             }
         } catch (SQLException e) {
@@ -358,11 +364,12 @@ public class H2DAOWarehouseZone implements IWarehouseZoneDAO {
 
     @Override
     public boolean updateCell(Cell cell) {
-        String query = "UPDATE Cell SET name = ?, isActive = ? WHERE ID = ?";
+        String query = "UPDATE Cell SET name = ?, isActive = ?, Grade = ? WHERE ID = ?";
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, cell.getName());
-            statement.setString(2, Boolean.toString(cell.isActive()));
-            statement.setLong(3, cell.getID());
+            statement.setBoolean(2, cell.isActive());
+            statement.setString(3,cell.getGrade());
+            statement.setLong(4, cell.getID());
             int rowsUpdated = statement.executeUpdate();
 
             return rowsUpdated > 0;

@@ -94,6 +94,10 @@
         </Button>
         <Button fx:id="finishButton" mnemonicParsing="false" onAction="#finish" text="Провести">
             <HBox.margin>
+            </HBox.margin>
+        </Button>
+        <Button fx:id="optimizeButton" mnemonicParsing="false" onAction="#optimize" text="Оптимизировать">
+            <HBox.margin>
                 <Insets right="5.0" />
             </HBox.margin>
         </Button>

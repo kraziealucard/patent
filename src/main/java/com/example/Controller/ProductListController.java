@@ -2,12 +2,14 @@ package com.example.Controller;
 
 import DAO.DAOFactory;
 import Model.GroupItems;
+import Model.Receipt;
+import Model.ReceiptDispatch;
 import Model.TypeOfStorageItem;
-import Model.User;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -17,19 +19,27 @@ import javafx.stage.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import EditableCustomTableCell.EditableComboBoxTableCell;
 
 public class ProductListController {
     public TableView<TypeOfStorageItem> table;
     public TableColumn<TypeOfStorageItem, Long> idColumn;
     public TableColumn<TypeOfStorageItem, String> nameColumn;
     public TableColumn<TypeOfStorageItem, Double> weightColumn;
+    public TableColumn<TypeOfStorageItem, String> gradeColumn;
     public TreeView<GroupItems> ListGroup;
     public Button removeButton;
     public Button explainButton;
     public Button saveToExcelButton;
     public ComboBox<GroupItems> groupComboBox;
+    public DatePicker startDate;
+    public DatePicker endDate;
     private ObservableList<GroupItems> itemsForComboBox;
     private ArrayList<TypeOfStorageItem> typeOfStorageItems;
     private ArrayList<GroupItems> groupItems;
@@ -37,12 +47,14 @@ public class ProductListController {
     private TypeOfStorageItem itemForReturn;
     private Menu moveMenu;
     private DAOFactory dao;
+    private ArrayList<ReceiptDispatch> receiptDispatchesList;
 
-    public void init(DAOFactory dao, boolean isProducts, ArrayList<TypeOfStorageItem> typeOfStorageItems, ArrayList<GroupItems> groupItems) {
+    public void init(DAOFactory dao, boolean isProducts, ArrayList<TypeOfStorageItem> typeOfStorageItems, ArrayList<GroupItems> groupItems, ArrayList<ReceiptDispatch> receiptDispatchesList) {
         this.dao = dao;
         this.typeOfStorageItems = typeOfStorageItems;
         this.groupItems = groupItems;
         this.isProducts = isProducts;
+        this.receiptDispatchesList = receiptDispatchesList;
 
         moveMenu = new Menu("Переместить выбранный");
         ListGroup.setRoot(new TreeItem<>(new GroupItems(-1, "Все", isProducts)));
@@ -56,6 +68,7 @@ public class ProductListController {
 
         itemsForComboBox = FXCollections.observableArrayList();
         groupComboBox.setItems(itemsForComboBox);
+
 
         configureUI();
         updateListView();
@@ -166,9 +179,7 @@ public class ProductListController {
                 menuItem.setOnAction(eventM -> moveSelectedGroupItems(groupItem, true));
                 moveMenu.getItems().add(menuItem);
             }
-            if (selectedItem != null && selectedItem != ListGroup.getRoot()) {
-                deleteItem.setDisable(false);
-            } else deleteItem.setDisable(true);
+            deleteItem.setDisable(selectedItem == null || selectedItem == ListGroup.getRoot());
         });
 
         ListGroup.setContextMenu(contextMenu);
@@ -178,8 +189,11 @@ public class ProductListController {
 
         idColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getID()));
         nameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
+        gradeColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getGrade()));
 
+        ObservableList<String> characters = FXCollections.observableArrayList("A", "B", "C", " ");
         nameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        gradeColumn.setCellFactory(col -> new EditableComboBoxTableCell<>(item -> characters));
 
         configureWeightColumn();
     }
@@ -188,7 +202,7 @@ public class ProductListController {
         weightColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getWeight()));
         weightColumn.setCellFactory(column -> {
             return new TableCell<TypeOfStorageItem, Double>() {
-                private TextField textField;
+                private final TextField textField;
 
                 {
                     textField = new TextField();
@@ -327,10 +341,7 @@ public class ProductListController {
     }
 
     private void updateListView() {
-        ArrayList<GroupItems> tempA = groupItems.stream()
-                .filter(GroupItems::isActive)
-                .filter(t -> t.isProduct() == isProducts)
-                .collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<GroupItems> tempA = groupItems.stream().filter(GroupItems::isActive).filter(t -> t.isProduct() == isProducts).collect(Collectors.toCollection(ArrayList::new));
         GroupItems temp = groupComboBox.getValue();
         itemsForComboBox.clear();
         itemsForComboBox.addAll(tempA);
@@ -373,10 +384,7 @@ public class ProductListController {
     }
 
     public void updateTable() {
-        ObservableList<TypeOfStorageItem> items = typeOfStorageItems.stream().
-                filter(TypeOfStorageItem::isActive).
-                filter(t -> t.isProduct() == isProducts).
-                collect(Collectors.toCollection(FXCollections::observableArrayList));
+        ObservableList<TypeOfStorageItem> items = typeOfStorageItems.stream().filter(TypeOfStorageItem::isActive).filter(t -> t.isProduct() == isProducts).collect(Collectors.toCollection(FXCollections::observableArrayList));
 
         TreeItem<GroupItems> item = ListGroup.getSelectionModel().getSelectedItem();
         if (item != ListGroup.getRoot() && item != null) {
@@ -401,7 +409,6 @@ public class ProductListController {
 
     public void cancelEditWeight(TableColumn.CellEditEvent<TypeOfStorageItem, Double> event) {
         event.getRowValue().setWeight(event.getOldValue());
-        dao.getItemTypesDAO().updateTypeList(event.getRowValue());
         updateListView();
         updateTable();
     }
@@ -413,4 +420,135 @@ public class ProductListController {
         updateTable();
     }
 
+    public void cancelEditGrade(TableColumn.CellEditEvent<TypeOfStorageItem, String> event) {
+        String value = event.getOldValue();
+        TypeOfStorageItem item = event.getRowValue();
+        item.setGrade(value);
+    }
+
+    public void commitEditGrade(TableColumn.CellEditEvent<TypeOfStorageItem, String> event) {
+        String value = event.getNewValue();
+        TypeOfStorageItem item = event.getRowValue();
+        item.setGrade(value);
+        dao.getItemTypesDAO().updateTypeList(item);
+    }
+
+    public void changeDateStart(ActionEvent actionEvent) {
+        endDate.setDayCellFactory(picker -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate date, boolean empty) {
+                super.updateItem(date, empty);
+                if (startDate.getValue() != null && date.isBefore(startDate.getValue())) {
+                    setDisable(true);
+                    setStyle("-fx-background-color: #eeeeee;");
+                }
+            }
+        });
+    }
+
+    public void changeDateEnd(ActionEvent actionEvent) {
+        startDate.setDayCellFactory(picker -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate date, boolean empty) {
+                super.updateItem(date, empty);
+                if (endDate.getValue() != null && date.isAfter(endDate.getValue())) {
+                    setDisable(true);
+                    setStyle("-fx-background-color: #eeeeee;");
+                }
+            }
+        });
+    }
+
+    private List<ReceiptDispatch> filterReceiptDispatch() {
+        return new ArrayList<>(receiptDispatchesList.stream()
+                .filter(d -> d.isProduct() == isProducts)
+                .filter(d -> d.getDate().isAfter(startDate.getValue()))
+                .filter(d -> d.getDate().isBefore(endDate.getValue())).toList());
+    }
+
+    private void ABCAnalys(int mode){
+        List<ReceiptDispatch> dispatches = filterReceiptDispatch();
+
+        for(TypeOfStorageItem itemType : table.getItems()) {
+            itemType.setGrade(" ");
+        }
+        Map<TypeOfStorageItem, Long> map = new HashMap<>();
+        //По частоте
+        if (mode==0) {
+            for (ReceiptDispatch dispatch : dispatches) {
+                for (TypeOfStorageItem type : table.getItems()) {
+                    for (Receipt.ListOfReceipt listItem : dispatch.getLists()) {
+                        if (listItem.getItem().getType() == type) {
+                            map.put(type, map.getOrDefault(type, 0L) + 1);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            for (ReceiptDispatch dispatch : dispatches) {
+                for (TypeOfStorageItem type : table.getItems()) {
+                    for (Receipt.ListOfReceipt listItem : dispatch.getLists()) {
+                        if (listItem.getItem().getType() == type) {
+                            map.put(type, map.getOrDefault(type, 0L) + listItem.getAmount());
+                        }
+                    }
+                }
+            }
+        }
+        //Сортировка
+        List<Map.Entry<TypeOfStorageItem,Long>> sortedList=new ArrayList<>(map.entrySet());
+        sortedList.sort(Map.Entry.<TypeOfStorageItem, Long>comparingByValue().reversed());
+
+        long totalFrequency = sortedList.stream().mapToLong(Map.Entry::getValue).sum();
+        double cumulativePercentage = 0.0;
+        long currentCumulativeFrequency = 0;
+        final double thresholdA = 80.0;
+        final double thresholdB = 95.0;
+
+        Map<Long, TypeOfStorageItem> itemMap = table.getItems().stream()
+                .collect(Collectors.toMap(TypeOfStorageItem::getID, item -> item));
+
+        for (Map.Entry<TypeOfStorageItem, Long> entry : sortedList) {
+            TypeOfStorageItem currentItem = entry.getKey();
+            long frequency = entry.getValue();
+
+            if (currentItem == null) continue;
+
+            if (totalFrequency > 0) {
+                currentCumulativeFrequency += frequency;
+                cumulativePercentage = (double) currentCumulativeFrequency / totalFrequency * 100.0;
+            }
+            else {
+                cumulativePercentage = 100.0;
+            }
+
+            if (cumulativePercentage <= thresholdA) {
+                currentItem.setGrade("A");
+            } else if (cumulativePercentage <= thresholdB) {
+                currentItem.setGrade("B");
+            } else {
+                currentItem.setGrade("C");
+            }
+        }
+
+        for(TypeOfStorageItem itemType : table.getItems()) {
+            if(itemType.getGrade().isBlank()) {
+                itemType.setGrade("C");
+            }
+        }
+
+
+        dao.getItemTypesDAO().ABCAnalyse(table.getItems());
+        updateTable();
+    }
+
+    public void onFrequencyAction(ActionEvent actionEvent) {
+       ABCAnalys(0);
+    }
+
+    public void onVolumeAction(ActionEvent actionEvent) {
+        ABCAnalys(1);
+    }
 }

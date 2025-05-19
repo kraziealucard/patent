@@ -2,16 +2,18 @@ package Model;
 
 import java.util.ArrayList;
 
-public class Cell {
+public class Cell implements Cloneable{
     private Long ID;
     private double currentWeight;
     private String name;
-    private final ArrayList<StorageItem> stored;
+    private ArrayList<StorageItem> stored;
     private boolean isActive;
     private final double maxWeight;
     final private WarehouseZone zone;
+    private String grade;
+    private double pseudoCurrentWeight;
 
-    public Cell(long ID, String name, WarehouseZone zone, double maxWeight) {
+    public Cell(long ID, String name, WarehouseZone zone, double maxWeight, String grade) {
         this.ID = ID;
         this.name = name;
         currentWeight = 0;
@@ -19,6 +21,7 @@ public class Cell {
         this.isActive = true;
         stored = new ArrayList<StorageItem>();
         this.zone = zone;
+        this.grade=grade;
     }
 
     //Добавляет продукты в клетку, если вес продуктов не привышает максимального веса клетки
@@ -79,6 +82,10 @@ public class Cell {
         return maxWeight;
     }
 
+    public double getAvailableWeight(){ return maxWeight-currentWeight;}
+
+    public double getPseudoAvailableWeight(){ return maxWeight-pseudoCurrentWeight;}
+
     public void setID(Long ID) {
         this.ID = ID;
     }
@@ -91,4 +98,26 @@ public class Cell {
     public String toString() {
         return name;
     }
+
+    public String getGrade() {
+        return grade;
+    }
+
+    public void setGrade(String grade) {
+        this.grade = grade;
+    }
+
+    public void reloadPseudoCurrentWeight(){
+        pseudoCurrentWeight=currentWeight;
+    }
+
+    public double getPseudoCurrentWeight() {
+        return pseudoCurrentWeight;
+    }
+
+    public void setPseudoCurrentWeight(double pseudoCurrentWeight) {
+        this.pseudoCurrentWeight = pseudoCurrentWeight;
+    }
+
+    public void minusPseudoWeight(double weight){this.pseudoCurrentWeight=-weight;}
 }

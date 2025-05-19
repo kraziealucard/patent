@@ -12,6 +12,7 @@ module com.example.patent {
     requires java.sql;
     requires org.apache.poi.poi;
     requires org.apache.poi.ooxml;
+    requires ortools.java;
 
     opens com.example.Controller to javafx.fxml;
     exports com.example.Controller;

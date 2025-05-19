@@ -3,6 +3,7 @@ package com.example.Controller;
 import DAO.DAOFactory;
 import Model.*;
 import Model.Cell;
+import Services.PlacementOptimizer;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,7 +24,7 @@ import org.controlsfx.control.Notifications;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class movementController {
@@ -32,7 +33,6 @@ public class movementController {
     public DatePicker datePicker;
     public ComboBox<User> performerComboBox;
     public TextField invoiceNumberTextField;
-
     public TableView<ReceiptMovement.ListOfReceiptMovement> table;
     public TableColumn<ReceiptMovement.ListOfReceiptMovement, TypeOfStorageItem> ItemColumn;
     public TableColumn<ReceiptMovement.ListOfReceiptMovement, Integer> amountOnCellColumn;
@@ -47,6 +47,7 @@ public class movementController {
     public Button removeButton;
     public Button finishButton;
     public Button ExclBtn;
+    public Button optimizeButton;
     private ArrayList<ReceiptMovement> receipts;
     private ArrayList<TypeOfStorageItem> items;
     private ArrayList<WarehouseZone> zones;
@@ -855,5 +856,128 @@ public class movementController {
             String filePath = file.getAbsolutePath();
             ExcelConverter.convertToExcelForMovement(table, filePath, datePicker.getValue(), invoiceNumberTextField.getText(), performerComboBox.getValue().getName());
         }
+    }
+
+    public void optimizeItems(ActionEvent actionEvent) {
+        if (table.getItems().isEmpty()) return;
+        Map<TypeOfStorageItem,Integer> optimizeMap=new HashMap<>();
+        Map<StorageItem, Map<Cell,Integer>> from=new HashMap<>();
+        ArrayList<Cell> cells=new ArrayList<>();
+        for (WarehouseZone zone : zones) {
+            if (zone.isProductZone() == isProduct && zone.isActive()) {
+                for (int j = 0; j < zone.getCells().length; j++) {
+                    cells.addAll(List.of(zone.getCells()[j]));
+                }
+            }
+        }
+        for(ReceiptMovement.ListOfReceiptMovement l:table.getItems())
+        {
+            StorageItem storageItem=l.getItem();
+            TypeOfStorageItem type=storageItem.getType();
+            Cell cell=l.getFrom();
+            int amount=l.getAmount();
+            cell.reloadPseudoCurrentWeight();
+            cell.minusPseudoWeight(amount*type.getWeight());
+            optimizeMap.put(type,optimizeMap.getOrDefault(type,0)+l.getAmount());
+            Map<Cell,Integer> cellAndAmount=from.getOrDefault(storageItem,new HashMap<Cell,Integer>());
+            cellAndAmount.put(cell,cellAndAmount.getOrDefault(cell,0) +l.getAmount());
+            from.putIfAbsent(storageItem,cellAndAmount);
+        }
+
+
+        Map<TypeOfStorageItem, Map<Cell, Integer>> into= new PlacementOptimizer().getOptimizePlacement(optimizeMap,cells);
+        for (Cell cell:cells){
+            cell.reloadPseudoCurrentWeight();
+        }
+
+        //До этого мы полчили список товаров их количество и откуда мы их получили
+        //Также мы получили список товаров и куда их разместить
+        //Осталось это всё осединить в квитанцию о перемещении
+
+        ArrayList<ReceiptMovement.ListOfReceiptMovement> receiptMovements=generateMovements(from,into);
+        currentReceipt.getListMovement().clear();
+        currentReceipt.getListMovement().addAll(receiptMovements);
+        updateTable();
+
+    }
+
+    public ArrayList<ReceiptMovement.ListOfReceiptMovement> generateMovements(
+            Map<StorageItem, Map<Cell, Integer>> from,
+            Map<TypeOfStorageItem, Map<Cell, Integer>> to) {
+
+        ArrayList<ReceiptMovement.ListOfReceiptMovement> listOfReceiptMovement = new ArrayList<>();
+        long nextMovementId = -1;
+
+        for (Map.Entry<StorageItem, Map<Cell, Integer>> fromItemEntry : from.entrySet()) {
+            StorageItem storegeItem = fromItemEntry.getKey();
+            Map<Cell, Integer> sourceCellQuantities = fromItemEntry.getValue();
+
+
+            if (!to.containsKey(storegeItem.getType())) {
+                System.err.println("Предупреждение: Для типа товара '" + storegeItem + "' отсутствует информация о назначении в карте 'to'. Товары не будут перемещены.");
+                continue;
+            }
+
+            Map<Cell, Integer> destinationCellQuantities = to.get(storegeItem.getType());
+
+            Map<Cell, Integer> remainingDestinations = new HashMap<>(destinationCellQuantities);
+
+
+            for (Map.Entry<Cell, Integer> sourceEntry : sourceCellQuantities.entrySet()) {
+                Cell sourceCell = sourceEntry.getKey();
+                int quantityToMoveFromThisSource = sourceEntry.getValue();
+
+                if (quantityToMoveFromThisSource <= 0) { // Нечего перемещать из этой ячейки-источника
+                    continue;
+                }
+
+
+                Iterator<Map.Entry<Cell, Integer>> destEntryIterator = remainingDestinations.entrySet().iterator();
+
+                while (quantityToMoveFromThisSource > 0 && destEntryIterator.hasNext()) {
+                    Map.Entry<Cell, Integer> destEntry = destEntryIterator.next();
+                    Cell destCell = destEntry.getKey();
+                    int neededAtThisDest = destEntry.getValue();
+
+                    if (neededAtThisDest <= 0) {
+                        continue;
+                    }
+
+                    int amountToActuallyMove = Math.min(quantityToMoveFromThisSource, neededAtThisDest);
+
+                        // Создание записи о перемещении
+                        listOfReceiptMovement.add(new ReceiptMovement.ListOfReceiptMovement(
+                                -1,
+                                currentReceipt,
+                                storegeItem,
+                                amountToActuallyMove,
+                                storegeItem.getLocationOnStorage(),
+                                destCell
+                        ));
+
+                        quantityToMoveFromThisSource -= amountToActuallyMove;
+
+                        destEntry.setValue(neededAtThisDest - amountToActuallyMove);
+
+                }
+
+
+                if (quantityToMoveFromThisSource > 0) {
+                    System.err.println("Ошибка: Недостаточно места/потребности в пунктах назначения для товара '" + storegeItem +
+                            "' из ячейки '" + sourceCell + "'. Осталось переместить: " + quantityToMoveFromThisSource +
+                            " единиц. Эти единицы не были распределены.");
+                }
+            }
+
+
+            for (Map.Entry<Cell, Integer> entry : remainingDestinations.entrySet()) {
+                if (entry.getValue() > 0) {
+                    System.err.println("Предупреждение: Пункт назначения '" + entry.getKey() + "' для товара '" + storegeItem +
+                            "' все еще требует " + entry.getValue() +
+                            " единиц, но доступные товары из 'from' были исчерпаны или уже распределены.");
+                }
+            }
+        }
+        return listOfReceiptMovement;
     }
 }

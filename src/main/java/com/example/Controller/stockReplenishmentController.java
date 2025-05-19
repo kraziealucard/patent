@@ -3,6 +3,7 @@ package com.example.Controller;
 import DAO.DAOFactory;
 import Model.*;
 import Model.Cell;
+import Services.PlacementOptimizer;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -25,6 +26,9 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class stockReplenishmentController {
@@ -46,6 +50,7 @@ public class stockReplenishmentController {
     public Button removeButton;
     public Button finishButton;
     public Button toExcelBtn;
+    public Button optimizeButton;
     private DAOFactory dao;
     private boolean isProduct;
     private ReceiptSupply currentReceipt;
@@ -54,6 +59,7 @@ public class stockReplenishmentController {
     private ObservableList<User> userObservableList;
     private ArrayList<TypeOfStorageItem> typeOfStorageItems;
     private ArrayList<ReceiptSupply> receiptSuppliesList;
+    private ArrayList<ReceiptDispatch> receiptDispatches;
     private ArrayList<WarehouseZone> zones;
     private ArrayList<Contractor> contractors;
     private ArrayList<User> users;
@@ -61,10 +67,13 @@ public class stockReplenishmentController {
 
     public void init(DAOFactory dao, Tab tab, boolean isProduct, ArrayList<TypeOfStorageItem> typeOfStorageItems,
                      ArrayList<ReceiptSupply> receiptSuppliesList, ArrayList<WarehouseZone> zones,
-                     ArrayList<Contractor> contractors, ArrayList<User> users, ArrayList<GroupItems> groupItems) {
+                     ArrayList<Contractor> contractors, ArrayList<User> users, ArrayList<GroupItems> groupItems,
+                     ArrayList<ReceiptDispatch> receiptDispatches
+                     ) {
         this.dao = dao;
         this.isProduct = isProduct;
         this.datePicker.setValue(LocalDate.now());
+        this.receiptDispatches=receiptDispatches;
         toExcelBtn.setVisible(false);
         availableWeightClmn.setVisible(true);
 
@@ -124,7 +133,7 @@ public class stockReplenishmentController {
         updateCells();
     }
 
-    private void configureTableForRead() {
+    /*private void configureTableForRead() {
         table.setRowFactory(tv -> {
             TableRow<Receipt.ListOfReceipt> row = new TableRow<>();
 
@@ -305,8 +314,7 @@ public class stockReplenishmentController {
 
         rootPane.getStylesheets().add(getClass().getResource("editable-column.css").toExternalForm());
 
-    }
-
+    }*/
 
     private void configureTable() {
         table.setRowFactory(tv -> {
@@ -625,6 +633,9 @@ public class stockReplenishmentController {
 
         finishButton.setDisable(true);
         finishButton.getStyleClass().add("disabled");
+
+        optimizeButton.setDisable(true);
+        optimizeButton.getStyleClass().add("disabled");
     }
 
     private boolean addItemsIntoCell() {
@@ -697,7 +708,7 @@ public class stockReplenishmentController {
         stage.setScene(scene);
 
         ProductListController productListController = fxmlLoader.getController();
-        productListController.init(dao, isProduct, typeOfStorageItems, groupItems);
+        productListController.init(dao, isProduct, typeOfStorageItems, groupItems,receiptDispatches);
         stage.setResizable(false);
         if (itemForChange == null) {
             stage.setOnHidden(new EventHandler<WindowEvent>() {
@@ -777,5 +788,52 @@ public class stockReplenishmentController {
             ExcelConverter.convertToExcelForSupply(table, filePath, datePicker.getValue(),
                     suppliersComboBox.getValue().getName(), invoiceNumberTextField.getText(), performerComboBox.getValue().getName());
         }
+    }
+
+    public void optimize(ActionEvent actionEvent) {
+        Map<TypeOfStorageItem,Integer> itemToOptimize=new HashMap<>();
+        ArrayList<Cell> cells=new ArrayList<>();
+        ArrayList<WarehouseZone> warehouseZones = zones.stream().
+                filter(WarehouseZone::isActive).
+                filter(t -> t.isProductZone() == isProduct).
+                collect(Collectors.toCollection(ArrayList::new));
+        for (WarehouseZone wz : warehouseZones) {
+            for (int i = 0; i < wz.getCells().length; i++) {
+                cells.addAll(List.of(wz.getCells()[i]));
+                for (Cell cell : wz.getCells()[i]){
+                    cell.reloadPseudoCurrentWeight();
+                }
+            }
+        }
+
+        for (Receipt.ListOfReceipt list: currentReceipt.getLists()){
+            TypeOfStorageItem currentItem=list.getItem().getType();
+            itemToOptimize.put(currentItem,itemToOptimize.getOrDefault(currentItem,0) +list.getAmount());
+        }
+        PlacementOptimizer placementOptimizer=new PlacementOptimizer();
+        Map<TypeOfStorageItem, Map<Cell, Integer>> optimizePlacement =
+                placementOptimizer.getOptimizePlacement(itemToOptimize,cells);
+
+        ArrayList<Receipt.ListOfReceipt> ReceiptLists=new ArrayList<>();
+
+        TypeOfStorageItem[] types=optimizePlacement.keySet().toArray(new TypeOfStorageItem[0]);
+
+
+        for(TypeOfStorageItem type:types){
+            Cell[] cellArr=optimizePlacement.get(type).keySet().toArray(new Cell[0]);
+            Map<Cell,Integer> cellAmount=optimizePlacement.get(type);
+            for (Cell cell:cellArr) {
+                StorageItem storageItem=new StorageItem(-1,type,cell);
+                Receipt.ListOfReceipt currentRec=new Receipt.ListOfReceipt(-1,currentReceipt,storageItem,
+                        cellAmount.get(cell),cell);
+                ReceiptLists.add(currentRec);
+            }
+        }
+
+        currentReceipt.getLists().clear();
+        currentReceipt.setLists(ReceiptLists);
+        ObservableList<ReceiptSupply.ListOfReceipt> temp = FXCollections.observableArrayList(currentReceipt.getLists());
+        table.setItems(temp);
+        table.refresh();
     }
 }

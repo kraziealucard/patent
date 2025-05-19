@@ -170,7 +170,7 @@ public class ZoneViewController {
         tab.setContent(root);
 
         cellViewController productListController = fxmlLoader.getController();
-        productListController.init(tab, zones);
+        productListController.init(tab, zones,dao);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }

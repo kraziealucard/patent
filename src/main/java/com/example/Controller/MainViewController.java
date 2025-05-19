@@ -215,7 +215,7 @@ public class MainViewController {
 
         ProductListController productListController = fxmlLoader.getController();
         productListController.explainButton.setVisible(false);
-        productListController.init(dao, false, typeOfStorageItemList, groupItemsList);
+        productListController.init(dao, false, typeOfStorageItemList, groupItemsList,receiptDispatchesList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -234,7 +234,7 @@ public class MainViewController {
 
         ProductListController productListController = fxmlLoader.getController();
         productListController.explainButton.setVisible(false);
-        productListController.init(dao, true, typeOfStorageItemList, groupItemsList);
+        productListController.init(dao, true, typeOfStorageItemList, groupItemsList,receiptDispatchesList);
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -264,7 +264,9 @@ public class MainViewController {
 
         tab.setContent(root);
         stockReplenishmentController stockReplenishmentController = fxmlLoader.getController();
-        stockReplenishmentController.init(dao, tab, true, typeOfStorageItemList, receiptSuppliesList, zoneList, contractors, userList, groupItemsList);
+        stockReplenishmentController.init(dao, tab, true, typeOfStorageItemList, receiptSuppliesList, zoneList,
+                contractors, userList, groupItemsList,receiptDispatchesList
+        );
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -276,7 +278,9 @@ public class MainViewController {
 
         tab.setContent(root);
         stockReplenishmentController stockReplenishmentController = fxmlLoader.getController();
-        stockReplenishmentController.init(dao, tab, false, typeOfStorageItemList, receiptSuppliesList, zoneList, contractors, userList, groupItemsList);
+        stockReplenishmentController.init(dao, tab, false, typeOfStorageItemList, receiptSuppliesList, zoneList,
+                contractors, userList, groupItemsList,receiptDispatchesList
+        );
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }

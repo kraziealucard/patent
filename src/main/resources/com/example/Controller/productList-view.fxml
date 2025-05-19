@@ -4,6 +4,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import eu.hansolo.tilesfx.Tile?>
+<?import javafx.scene.text.Text?>
 <GridPane minHeight="435.0" minWidth="677.0" prefHeight="435.0" prefWidth="866.0"
           xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"
           fx:controller="com.example.Controller.ProductListController">
@@ -16,25 +18,38 @@
                          prefWidth="150.0" text="Название"/>
             <TableColumn fx:id="weightColumn" onEditCancel="#cancelEditWeight" onEditCommit="#commitEditWeight"
                          prefWidth="150.0" text="Вес"/>
+            <TableColumn fx:id="gradeColumn" onEditCancel="#cancelEditGrade" onEditCommit="#commitEditGrade" text="Класс"/>
         </columns>
         <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
         </columnResizePolicy>
     </TableView>
     <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="2" GridPane.rowIndex="1">
-        <children>
-            <Button mnemonicParsing="false" onAction="#toFirst" text="К первому"/>
-            <Button mnemonicParsing="false" onAction="#toLast" text="К последнему"/>
-            <Button mnemonicParsing="false" onAction="#addProduct" text="Добавить"/>
-            <Button fx:id="removeButton" mnemonicParsing="false" onAction="#removeProduct" text="Удалить"/>
-            <Button fx:id="saveToExcelButton" mnemonicParsing="false" onAction="#toExcel" text="Печать"/>
-            <Button mnemonicParsing="false" onAction="#TypeSetGroup" text="Перенести в"/>
-            <ComboBox fx:id="groupComboBox" prefWidth="150.0"/>
-            <Button fx:id="explainButton" mnemonicParsing="false" onAction="#toExplain" text="Провести"/>
-        </children>
         <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
         </padding>
+        <Button mnemonicParsing="false" onAction="#toFirst" text="К первому"/>
+        <Button mnemonicParsing="false" onAction="#toLast" text="К последнему"/>
+        <Button mnemonicParsing="false" onAction="#addProduct" text="Добавить"/>
+        <Button fx:id="removeButton" mnemonicParsing="false" onAction="#removeProduct" text="Удалить"/>
+        <Button fx:id="saveToExcelButton" mnemonicParsing="false" onAction="#toExcel" text="Печать"/>
+        <Button mnemonicParsing="false" onAction="#TypeSetGroup" text="Перенести в"/>
+        <ComboBox fx:id="groupComboBox" prefWidth="150.0"/>
+        <Button fx:id="explainButton" mnemonicParsing="false" onAction="#toExplain" text="Провести"/>
+        <VBox alignment="CENTER">
+            <Text text="ABC анализ"/>
+            <HBox>
+                <VBox alignment="CENTER">
+                    <DatePicker fx:id="startDate" onAction="#changeDateStart"/>
+                    <Button text="По частоте отгрузок" onAction="#onFrequencyAction"/>
+                </VBox>
+                <VBox alignment="CENTER">
+                    <DatePicker fx:id="endDate" onAction="#changeDateEnd"/>
+                    <Button text="По объему отгрузок" onAction="#onVolumeAction"/>
+                </VBox>
+            </HBox>
+        </VBox>
+
     </HBox>
     <columnConstraints>
         <ColumnConstraints maxWidth="643.8" minWidth="150.6" prefWidth="165.2"/>

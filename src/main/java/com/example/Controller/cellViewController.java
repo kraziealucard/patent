@@ -1,6 +1,8 @@
 package com.example.Controller;
 
 import DAO.DAOFactory;
+import EditableCustomTableCell.EditableComboBoxTableCell;
+import Model.TypeOfStorageItem;
 import Model.WarehouseZone;
 import Model.Cell;
 import javafx.beans.property.SimpleObjectProperty;
@@ -30,11 +32,14 @@ public class cellViewController {
     public TableColumn<Cell, WarehouseZone> zoneClmn;
     public TableColumn<Cell, Double> weightClmn;
     public TableColumn<Cell, Double> maxWeightClmn;
+    public TableColumn<Cell, String> isUsefulClmn;
     private ArrayList<WarehouseZone> zones;
     private ArrayList<Cell> cells;
     private ObservableList<Cell> items;
+    private DAOFactory dao;
 
-    public void init(Tab tab, ArrayList<WarehouseZone> zones) {
+    public void init(Tab tab, ArrayList<WarehouseZone> zones, DAOFactory dao) {
+        this.dao=dao;
         this.zones = zones;
         items = FXCollections.observableArrayList();
         cells = new ArrayList<>();
@@ -49,6 +54,13 @@ public class cellViewController {
         zoneClmn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getZone()));
         weightClmn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getCurrentWeight()));
         maxWeightClmn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getMaxWeight()));
+
+        isUsefulClmn.setCellValueFactory(cellData->new SimpleStringProperty(cellData.getValue().getGrade()));
+        ObservableList<String> characters = FXCollections.observableArrayList("Премиум", "Стандартный","Удаленный");
+        isUsefulClmn.setCellFactory(col -> new EditableComboBoxTableCell<>(item -> characters));
+        isUsefulClmn.setEditable(true);
+        table.setEditable(true);
+
         doFilter();
     }
 
@@ -102,5 +114,19 @@ public class cellViewController {
             String filePath = file.getAbsolutePath();
             ExcelConverter.convertToExcel(table, filePath);
         }
+    }
+
+
+    public void cancelEditGrade(TableColumn.CellEditEvent<Cell, String> event) {
+        String value = event.getOldValue();
+        Cell cell = event.getRowValue();
+        cell.setGrade(value);
+    }
+
+    public void commitEditGrade(TableColumn.CellEditEvent<Cell, String> event) {
+        String value = event.getNewValue();
+        Cell cell = event.getRowValue();
+        cell.setGrade(value);
+        boolean x=dao.getWarehouseZoneDAO().updateCell(cell);
     }
 }
