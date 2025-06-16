@@ -460,10 +460,14 @@ public class ProductListController {
     }
 
     private List<ReceiptDispatch> filterReceiptDispatch() {
-        return new ArrayList<>(receiptDispatchesList.stream()
-                .filter(d -> d.isProduct() == isProducts)
-                .filter(d -> d.getDate().isAfter(startDate.getValue()))
-                .filter(d -> d.getDate().isBefore(endDate.getValue())).toList());
+
+        List<ReceiptDispatch> res=new ArrayList<>(receiptDispatchesList.stream()
+                .filter(d -> d.isProduct() == isProducts).toList());
+        if (startDate.getValue()!=null) res=res.stream()
+                .filter(d->d.getDate().isAfter(startDate.getValue())).toList();
+        if(endDate.getValue()!=null) res=res.stream()
+                .filter(d->d.getDate().isBefore(endDate.getValue())).toList();
+        return res;
     }
 
     private void ABCAnalys(int mode){

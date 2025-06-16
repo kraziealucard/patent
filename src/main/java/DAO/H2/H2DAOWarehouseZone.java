@@ -4,9 +4,7 @@ import DAO.IWarehouseZoneDAO;
 import Model.*;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -92,77 +90,123 @@ public class H2DAOWarehouseZone implements IWarehouseZoneDAO {
 
     @Override
     public ArrayList<WarehouseZone> getWarehouseZones(boolean onlyActive) {
-        ArrayList<WarehouseZone> data = new ArrayList<>();
-        String sql = "SELECT wz.ID, wz.name, wz.isProductZone, wz.maxWeight, wz.isActive, c.name AS cellName " +
+        ArrayList<WarehouseZone> resultZones = new ArrayList<>();
+        Map<Long, WarehouseZone> zoneMap = new HashMap<>();
+        Set<Long> zoneIds = new HashSet<>();
+
+        String zonesSql = "SELECT wz.ID, wz.name, wz.isProductZone, wz.maxWeight, wz.isActive, c_repr.name AS representativeCellName " +
                 "FROM WarehouseZone wz " +
                 "LEFT JOIN (SELECT IDZone, MAX(ID) AS maxCellID FROM Cell GROUP BY IDZone) cmax ON wz.ID = cmax.IDZone " +
-                "LEFT JOIN Cell c ON cmax.maxCellID = c.ID ";
+                "LEFT JOIN Cell c_repr ON cmax.maxCellID = c_repr.ID ";
 
         if (onlyActive) {
-            sql += "WHERE wz.isActive = true ";
+            zonesSql += "WHERE wz.isActive = true ";
         }
+        zonesSql += "ORDER BY wz.ID";
+
 
         try (Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(sql)) {
+             ResultSet rsZones = statement.executeQuery(zonesSql)) {
 
-            while (resultSet.next()) {
-                long zoneID = resultSet.getLong("ID");
-                String zoneName = resultSet.getString("name");
+            while (rsZones.next()) {
+                long zoneID = rsZones.getLong("ID");
+                String zoneName = rsZones.getString("name");
+                boolean isProductZone = rsZones.getBoolean("isProductZone");
+                double maxWeight = rsZones.getDouble("maxWeight");
+                boolean isActiveZone = rsZones.getBoolean("isActive");
+                String representativeCellName = rsZones.getString("representativeCellName");
+
                 int length = 0;
                 int width = 0;
-                boolean isActive = resultSet.getBoolean("isActive");
-                boolean isProductZone = resultSet.getBoolean("isProductZone");
-                double maxWeight = resultSet.getDouble("maxWeight");
-                String nameCell = resultSet.getString("cellName");
+                if (representativeCellName != null) {
 
-                String regex = "\\d+ - (\\d+) \\|\\| (\\d+)";
-                Pattern pattern = Pattern.compile(regex);
-                Matcher matcher = pattern.matcher(nameCell);
-                if (matcher.find()) {
-                    length = Integer.parseInt(matcher.group(1));
-                    width = Integer.parseInt(matcher.group(2));
+                    String regex = "\\d+\\s*-\\s*(\\d+)\\s*\\|\\|\\s*(\\d+)";
+                    Pattern pattern = Pattern.compile(regex);
+                    Matcher matcher = pattern.matcher(representativeCellName);
+                    if (matcher.find()) {
+                        length = Integer.parseInt(matcher.group(1));
+                        width = Integer.parseInt(matcher.group(2));
+                    }
                 }
-                WarehouseZone temp = new WarehouseZone(zoneID, zoneName, length, width, isProductZone, maxWeight);
-                temp.setActive(isActive);
-                data.add(temp);
-            }
 
+                WarehouseZone zone = new WarehouseZone(zoneID, zoneName, length, width, isProductZone, maxWeight);
+                zone.setActive(isActiveZone);
+
+                resultZones.add(zone);
+                zoneMap.put(zoneID, zone);
+                zoneIds.add(zoneID);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
+            return resultZones;
         }
 
+        if (zoneIds.isEmpty()) {
+            return resultZones;
+        }
 
-        for (WarehouseZone datum : data) {
-            ArrayList<Cell> cells = new ArrayList<>();
-            sql = "SELECT * FROM Cell WHERE IDZone = " + datum.getID();
-            try (Statement statement = connection.createStatement();
-                 ResultSet resultSet = statement.executeQuery(sql)) {
-                while (resultSet.next()) {
-                    long id = resultSet.getLong("ID");
-                    String name = resultSet.getString("name");
-                    boolean isActive = resultSet.getBoolean("isActive");
-                    String grade=resultSet.getString("Grade");
-                    Cell c = new Cell(id, name, datum, datum.getMaxWeight(),grade);
-                    c.setActive(isActive);
-                    cells.add(c);
-                }
+        Map<Long, ArrayList<Cell>> cellsByZoneId = new HashMap<>();
+        String placeHolders = String.join(",", Collections.nCopies(zoneIds.size(), "?"));
+        String cellsSql = "SELECT ID, IDZone, name, isActive, Grade FROM Cell WHERE IDZone IN (" + placeHolders + ") ORDER BY IDZone, ID";
 
-            } catch (SQLException e) {
-                e.printStackTrace();
+        try (PreparedStatement pStatementCells = connection.prepareStatement(cellsSql)) {
+            int paramIndex = 1;
+            for (Long id : zoneIds) {
+                pStatementCells.setLong(paramIndex++, id);
             }
 
-            cells.sort(Comparator.comparingLong(Cell::getID));
+            try (ResultSet rsCells = pStatementCells.executeQuery()) {
+                while (rsCells.next()) {
+                    long cellId = rsCells.getLong("ID");
+                    long cellZoneId = rsCells.getLong("IDZone");
+                    String cellName = rsCells.getString("name");
+                    boolean isActiveCell = rsCells.getBoolean("isActive");
+                    String cellGrade = rsCells.getString("Grade");
 
-            for (int i = 0, c = 0; i < datum.getCells().length; i++) {
-                for (int j = 0; j < datum.getCells()[i].length; j++) {
-                    Cell cell = datum.getCells()[i][j];
-                    cell.setID(cells.get(c).getID());
-                    cell.setGrade(cells.get(c++).getGrade());
+                    WarehouseZone parentZone = zoneMap.get(cellZoneId);
+                    if (parentZone != null) {
+                        Cell cell = new Cell(cellId, cellName, parentZone, parentZone.getMaxWeight(), cellGrade);
+                        cell.setActive(isActiveCell);
+                        cellsByZoneId.computeIfAbsent(cellZoneId, k -> new ArrayList<>()).add(cell);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return resultZones;
+        }
+
+        for (WarehouseZone zone : resultZones) {
+            ArrayList<Cell> actualCellsFromDb = cellsByZoneId.getOrDefault(zone.getID(), new ArrayList<>());
+
+            Cell[][] zoneCellArray = zone.getCells();
+
+            if (zoneCellArray == null) continue;
+
+            int dbCellIdx = 0;
+            for (int i = 0; i < zone.getCells().length; i++) {
+                if (i >= zoneCellArray.length || zoneCellArray[i] == null) continue;
+                for (int j = 0; j < zone.getCells()[i].length; j++) {
+                    if (j >= zoneCellArray[i].length) continue;
+
+                    Cell placeholderCellInArray = zoneCellArray[i][j];
+
+                    if (dbCellIdx < actualCellsFromDb.size()) {
+                        Cell cellDataFromDb = actualCellsFromDb.get(dbCellIdx);
+                        if (placeholderCellInArray != null) {
+
+                            placeholderCellInArray.setID(cellDataFromDb.getID());
+                            placeholderCellInArray.setName(cellDataFromDb.getName());
+                            placeholderCellInArray.setActive(cellDataFromDb.isActive());
+                            placeholderCellInArray.setGrade(cellDataFromDb.getGrade());
+
+                        }
+                    }
+                    dbCellIdx++;
                 }
             }
         }
-
-        return data;
+        return resultZones;
     }
 
     @Override

@@ -1,24 +1,15 @@
 package Services;
 
 import Model.*;
-import com.google.ortools.Loader;
-import com.google.ortools.linearsolver.MPConstraint;
-import com.google.ortools.linearsolver.MPObjective;
-import com.google.ortools.linearsolver.MPSolver;
-import com.google.ortools.linearsolver.MPVariable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-// ... ваш класс ...
 
-public class PlacementOptimizer { // Пример сервисного класса
+public class PlacementOptimizer {
 
-    static {
-        Loader.loadNativeLibraries();
-    }
 
     private double getPreferenceScore(String typeCategory, String cellCategory) {
-        // Реализуйте вашу логику приоритетов здесь
         switch (typeCategory) {
             case "A" -> {
                 if ("Премиум".equals(cellCategory)) return 1000;
@@ -36,98 +27,154 @@ public class PlacementOptimizer { // Пример сервисного клас�
                 if ("Удаленный".equals(cellCategory)) return 600;
             }
         }
-        return 0; // По умолчанию или для непредвиденных комбинаций
+        return 0;
     }
 
+    private static class PotentialPlacement {
+        TypeOfStorageItem item;
+        Cell cell;
+        double score;
+
+        PotentialPlacement(TypeOfStorageItem item, Cell cell, double score) {
+            this.item = item;
+            this.cell = cell;
+            this.score = score;
+        }
+    }
 
     public Map<TypeOfStorageItem, Map<Cell, Integer>> getOptimizePlacement(Map<TypeOfStorageItem,Integer> itemsAndAmount, List<Cell> cells) {
 
-        MPSolver solver = MPSolver.createSolver("SCIP"); // SCIP или CBC_MIXED_INTEGER_PROGRAMMING хорошо подходят
-        if (solver == null) {
-            System.err.println("Could not create solver SCIP");
+        if (itemsAndAmount == null || itemsAndAmount.isEmpty() || itemsAndAmount.values().stream().allMatch(amount -> amount <= 0)) {
+            System.out.println("Нет товаров для размещения.");
             return Collections.emptyMap();
         }
 
-        TypeOfStorageItem[] types=itemsAndAmount.keySet().toArray(new TypeOfStorageItem[0]);
-        int numItems = types.length;
-        int numCells = cells.size();
+        Map<TypeOfStorageItem, Integer>
+                actualItemsToPlace = itemsAndAmount.entrySet().stream()
+                .filter(entry -> entry.getValue() > 0)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        // 3. Определение переменных решения y_ij
-        MPVariable[][] y = new MPVariable[numItems][numCells];
-        for (int i = 0; i < numItems; ++i) {
-            for (int j = 0; j < numCells; ++j) {
-                // Количество единиц товара i в ячейке j
-                // Верхняя граница - либо N_i, либо сколько поместится по весу (C_j / w_i), берем меньшее
-                double maxCanFitByWeight = types[i].getWeight() > 0 ?
-                        cells.get(j).getPseudoAvailableWeight() / types[i].getWeight() :
-                        itemsAndAmount.get(types[i]); // если вес 0, то только по количеству
-                double upperBound = Math.min(itemsAndAmount.get(types[i]), maxCanFitByWeight);
-                y[i][j] = solver.makeIntVar(0, upperBound, "y_" + i + "_" + j);
-            }
+        if (actualItemsToPlace.isEmpty()) {
+            System.out.println("Нет товаров для размещения (все количества <= 0).");
+            return Collections.emptyMap();
         }
 
-        // 4. Определение ограничений
-        // Ограничение 1: Вместимость ячеек
-        for (int j = 0; j < numCells; ++j) {
-            MPConstraint constraint = solver.makeConstraint(0, cells.get(j).getPseudoAvailableWeight(), "Capacity_Cell_" + j);
-            for (int i = 0; i < numItems; ++i) {
-                constraint.setCoefficient(y[i][j], types[i].getWeight());
-            }
-        }
 
-        // Ограничение 2: Размещение всех товаров
-        for (int i = 0; i < numItems; ++i) {
-            MPConstraint constraint = solver.makeConstraint(itemsAndAmount.get(types[i]), itemsAndAmount.get(types[i]),
-                    "Demand_Item_" + i);
-            for (int j = 0; j < numCells; ++j) {
-                constraint.setCoefficient(y[i][j], 1);
-            }
-        }
-
-        // 5. Определение целевой функции
-        MPObjective objective = solver.objective();
-        for (int i = 0; i < numItems; ++i) {
-            for (int j = 0; j < numCells; ++j) {
-                double score = getPreferenceScore(types[i].getGrade(), cells.get(j).getGrade());
-                objective.setCoefficient(y[i][j], score);
-            }
-        }
-        objective.setMaximization();
-
-        // 6. Решение модели
-        final MPSolver.ResultStatus resultStatus = solver.solve();
-
-        // 7. Обработка результатов
-        Map<TypeOfStorageItem, Map<Cell, Integer>> placementResult = new HashMap<>(); // itemID -> {cellID -> quantity}
-        if (resultStatus == MPSolver.ResultStatus.OPTIMAL || resultStatus == MPSolver.ResultStatus.FEASIBLE) {
-            System.out.println("Решение найдено!");
-            System.out.println("Максимальное значение целевой функции = " + objective.value());
-            for (int i = 0; i < numItems; ++i) {
-                Map<Cell, Integer> itemPlacements = new HashMap<>();
-                for (int j = 0; j < numCells; ++j) {
-                    if (y[i][j].solutionValue() > 0.5) { // Для целочисленных > 0 достаточно
-                        int quantityPlaced = (int) Math.round(y[i][j].solutionValue());
-                        System.out.println("Товар " + types[i].getName() +
-                                " (Класс " + types[i].getGrade() +
-                                ") в Ячейку ID " + cells.get(j).getID() +
-                                " (Категория " + cells.get(j).getGrade() +
-                                ") - Количество: " + quantityPlaced);
-                        itemPlacements.put(cells.get(j), quantityPlaced);
-                    }
-                }
-                if (!itemPlacements.isEmpty()) {
-                    placementResult.put(types[i], itemPlacements);
-                }
-            }
-        } else {
-            System.err.println("Оптимальное решение не найдено. Статус: " + resultStatus);
-            if (resultStatus == MPSolver.ResultStatus.INFEASIBLE) {
-                System.err.println("Задача неразрешима. Проверьте ограничения и входные данные (например, достаточно ли общей вместимости ячеек).");
-            } else if (resultStatus == MPSolver.ResultStatus.UNBOUNDED) {
-                System.err.println("Задача неограничена. Проверьте целевую функцию и ограничения.");
-            }
+        if (cells == null || cells.isEmpty()) {
+            System.err.println("Нет доступных ячеек для размещения товаров.");
             return null;
         }
+
+        Map<TypeOfStorageItem, Map<Cell, Integer>> placementResult = new HashMap<>();
+        Map<TypeOfStorageItem, Integer> remainingItemsToPlace = new HashMap<>(actualItemsToPlace);
+        Map<Cell, Double> remainingCellCapacities = new HashMap<>();
+        for (Cell cell : cells) {
+            remainingCellCapacities.put(cell, cell.getPseudoAvailableWeight());
+        }
+
+        List<PotentialPlacement> potentialPlacements = new ArrayList<>();
+        for (TypeOfStorageItem item : remainingItemsToPlace.keySet()) {
+            for (Cell cell : cells) {
+                double score = getPreferenceScore(item.getGrade(), cell.getGrade());
+                potentialPlacements.add(new PotentialPlacement(item, cell, score));
+            }
+        }
+
+        potentialPlacements.sort((p1, p2) -> Double.compare(p2.score, p1.score));
+
+        for (PotentialPlacement pp : potentialPlacements) {
+            TypeOfStorageItem item = pp.item;
+            Cell cell = pp.cell;
+
+            int neededQuantityOfItem = remainingItemsToPlace.getOrDefault(item, 0);
+            if (neededQuantityOfItem == 0) {
+                continue;
+            }
+
+            double currentCellCapacityWeight = remainingCellCapacities.get(cell);
+            double itemWeight = item.getWeight();
+
+            if (currentCellCapacityWeight <= 0 && itemWeight > 0.00001) {
+                continue;
+            }
+
+            int maxUnitsCanFitInCell;
+            if (itemWeight > 0.00001) {
+                if (currentCellCapacityWeight < itemWeight) {
+                    maxUnitsCanFitInCell = 0;
+                } else {
+                    maxUnitsCanFitInCell = (int) Math.floor(currentCellCapacityWeight / itemWeight);
+                }
+            } else {
+                maxUnitsCanFitInCell = neededQuantityOfItem;
+            }
+
+            int quantityToPlace = Math.min(neededQuantityOfItem, maxUnitsCanFitInCell);
+            quantityToPlace = Math.max(0, quantityToPlace);
+
+            if (quantityToPlace > 0) {
+                placementResult.computeIfAbsent(item, k -> new HashMap<>())
+                        .merge(cell, quantityToPlace, Integer::sum);
+
+                remainingItemsToPlace.put(item, neededQuantityOfItem - quantityToPlace);
+
+                if (itemWeight > 0.00001) {
+                    remainingCellCapacities.put(cell, currentCellCapacityWeight - (quantityToPlace * itemWeight));
+                }
+            }
+        }
+
+        long totalRemainingCount = 0;
+        for (Map.Entry<TypeOfStorageItem, Integer> entry : remainingItemsToPlace.entrySet()) {
+            if (entry.getValue() > 0) {
+                System.err.println("Не удалось разместить все товары. Товар " + entry.getKey().getName() +
+                        " (Класс " + entry.getKey().getGrade() + ")" +
+                        " осталось " + entry.getValue() + " единиц.");
+                totalRemainingCount += entry.getValue();
+            }
+        }
+
+        if (totalRemainingCount > 0) {
+            System.err.println("Жадное размещение не смогло разместить все товары. Общее количество неразмещенных единиц: " + totalRemainingCount);
+            return null;
+        }
+
+        if (placementResult.isEmpty() && !actualItemsToPlace.isEmpty()) {
+            boolean anyItemHadPositiveDemand = actualItemsToPlace.values().stream().anyMatch(v -> v > 0);
+            if (anyItemHadPositiveDemand) {
+                System.err.println("Ни один товар не был размещен, хотя были товары для размещения. Проверьте вместимость ячеек и вес товаров.");
+                return null;
+            }
+        }
+
+
+        System.out.println("Жадное размещение завершено.");
+        double totalScoreCalculated = 0;
+        if (!placementResult.isEmpty()) {
+            System.out.println("Результаты размещения:");
+            for (Map.Entry<TypeOfStorageItem, Map<Cell, Integer>> entry : placementResult.entrySet()) {
+                TypeOfStorageItem item = entry.getKey();
+                for (Map.Entry<Cell, Integer> cellEntry : entry.getValue().entrySet()) {
+                    Cell cell = cellEntry.getKey();
+                    int quantity = cellEntry.getValue();
+                    double scoreForItemInCell = getPreferenceScore(item.getGrade(), cell.getGrade());
+                    totalScoreCalculated += quantity * scoreForItemInCell;
+                    System.out.println("  Товар " + item.getName() +
+                            " (Класс " + item.getGrade() +
+                            ") в Ячейку ID " + cell.getID() +
+                            " (Категория " + cell.getGrade() +
+                            ") - Количество: " + quantity +
+                            " (Счет за ед.: " + scoreForItemInCell +")");
+                }
+            }
+            System.out.println("Общий расчетный счет (жадный алгоритм): " + totalScoreCalculated);
+        } else if (actualItemsToPlace.isEmpty()) {
+            System.out.println("Нет товаров для размещения, результат пуст.");
+        } else {
+            System.out.println("Размещение завершено, но результат пуст (возможно, все товары имели количество 0).");
+        }
+
+
         return placementResult;
     }
 
